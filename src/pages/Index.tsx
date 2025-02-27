@@ -22,15 +22,15 @@ const Index = () => {
           </div>
         </header>
 
-        {/* Main content */}
-        <main className="flex-1 flex overflow-hidden p-4 gap-4 container mx-auto">
-          {/* Map area */}
-          <div className="flex-1 min-w-0 h-[calc(100vh-8rem)] overflow-hidden rounded-lg shadow-xl animate-fade-in">
+        {/* Main content - removed container constraint to allow full width */}
+        <main className="flex-1 flex overflow-hidden p-4 gap-4">
+          {/* Map area - now flex-grow-1 to take up all available space */}
+          <div className="flex-grow h-[calc(100vh-8rem)] overflow-hidden rounded-lg shadow-xl animate-fade-in">
             <Map />
           </div>
 
-          {/* Sidebar */}
-          <div className="w-80 h-[calc(100vh-8rem)] animate-slide-in">
+          {/* Sidebar - fixed width of 320px (w-80) */}
+          <div className="w-80 flex-shrink-0 h-[calc(100vh-8rem)] animate-slide-in">
             <Sidebar />
           </div>
         </main>
