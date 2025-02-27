@@ -3,6 +3,8 @@ import React, { useRef, useEffect, useState } from "react";
 import { useGame } from "@/context/GameContext";
 import GridOverlay from "./GridOverlay";
 import TokenLayer from "./TokenLayer";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Layers, Hand, PenTool, Ruler, DiceIcon, Settings, ArrowRight, ArrowLeft, PaintBucket, Cursor } from "lucide-react";
 
 const Map: React.FC = () => {
   const { gridType, gridSize, selectedTokenId, tokens } = useGame();
@@ -13,6 +15,7 @@ const Map: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [backgroundImage, setBackgroundImage] = useState("/placeholder.svg");
+  const [selectedTool, setSelectedTool] = useState<string>("select");
 
   // Sample background images to choose from (in a real app, these would be user-provided)
   const sampleBackgrounds = [
@@ -111,6 +114,41 @@ const Map: React.FC = () => {
     setScale(Math.min(scale * 1.3, 2));
   };
 
+  // Change the selected tool
+  const handleToolSelect = (tool: string) => {
+    setSelectedTool(tool);
+    console.log(`Selected tool: ${tool}`);
+  };
+
+  // Action bar tools configuration
+  const tools = [
+    { id: 'select', icon: <Cursor size={20} />, tooltip: 'Select Tool' },
+    { id: 'pan', icon: <Hand size={20} />, tooltip: 'Pan Tool' },
+    { id: 'draw', icon: <PenTool size={20} />, tooltip: 'Drawing Tools' },
+    { id: 'measure', icon: <Ruler size={20} />, tooltip: 'Measurement Tool' },
+    { id: 'fill', icon: <PaintBucket size={20} />, tooltip: 'Fill Tool' },
+    { id: 'dice', icon: <DiceIcon size={20} />, tooltip: 'Roll Dice' },
+  ];
+
+  // Action bar sections
+  const actionBarSections = [
+    { title: 'Tools', items: tools },
+    { 
+      title: 'Layers', 
+      items: [
+        { id: 'map', icon: <Layers size={20} />, tooltip: 'Map Layer' },
+        { id: 'tokens', icon: <div className="text-xs font-bold">T</div>, tooltip: 'Token Layer' },
+        { id: 'gm', icon: <div className="text-xs font-bold">GM</div>, tooltip: 'GM Layer' },
+      ] 
+    },
+    { 
+      title: 'Settings', 
+      items: [
+        { id: 'settings', icon: <Settings size={20} />, tooltip: 'Settings' },
+      ] 
+    }
+  ];
+
   return (
     <div 
       ref={containerRef}
@@ -148,8 +186,48 @@ const Map: React.FC = () => {
         <TokenLayer />
       </div>
 
+      {/* Roll20-style Action Bar (Left Side) */}
+      <div className="absolute left-4 top-1/2 -translate-y-1/2 flex flex-col items-center z-10">
+        <div className="glass-panel rounded-lg flex flex-col items-center shadow-xl">
+          {actionBarSections.map((section, sectionIndex) => (
+            <div key={`section-${sectionIndex}`} className="w-full">
+              {/* Section header */}
+              {sectionIndex > 0 && (
+                <div className="px-2 py-1 text-xs uppercase text-center font-semibold bg-primary/10 border-t border-b border-white/10">
+                  {section.title}
+                </div>
+              )}
+              
+              {/* Section tools */}
+              <div className="flex flex-col items-center py-1">
+                {section.items.map((item) => (
+                  <Tooltip key={item.id}>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => handleToolSelect(item.id)}
+                        className={`w-10 h-10 flex items-center justify-center transition-colors ${
+                          selectedTool === item.id 
+                            ? 'bg-primary/30 text-primary-foreground' 
+                            : 'hover:bg-white/10 text-foreground/80'
+                        }`}
+                        aria-label={item.tooltip}
+                      >
+                        {item.icon}
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="glass-panel">
+                      {item.tooltip}
+                    </TooltipContent>
+                  </Tooltip>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Roll20-style Zoom Control Panel */}
-      <div className="absolute left-4 top-1/2 -translate-y-1/2 flex flex-col items-center">
+      <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-center">
         <div className="glass-panel rounded-lg flex flex-col items-center overflow-hidden">
           {/* Zoom percentage display */}
           <div className="bg-secondary/80 w-10 h-10 flex items-center justify-center text-sm font-medium border-b border-white/10">
