@@ -7,7 +7,7 @@ import Sidebar from "@/components/Sidebar";
 const Index = () => {
   return (
     <GameProvider>
-      <div className="min-h-screen bg-background flex flex-col">
+      <div className="min-h-screen bg-background text-foreground dark flex flex-col">
         {/* Header */}
         <header className="glass-panel p-4 border-b border-border relative z-10">
           <div className="container mx-auto flex justify-between items-center">
