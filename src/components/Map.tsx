@@ -5,7 +5,7 @@ import GridOverlay from "./GridOverlay";
 import TokenLayer from "./TokenLayer";
 
 const Map: React.FC = () => {
-  const { gridType, gridSize } = useGame();
+  const { gridType, gridSize, selectedTokenId, tokens } = useGame();
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 1000, height: 800 });
   const [scale, setScale] = useState(1);
@@ -74,6 +74,43 @@ const Map: React.FC = () => {
     }
   }, []);
 
+  // Handle zoom in control
+  const handleZoomIn = () => {
+    const newScale = Math.min(scale * 1.2, 3);
+    setScale(newScale);
+  };
+
+  // Handle zoom out control
+  const handleZoomOut = () => {
+    const newScale = Math.max(scale * 0.8, 0.5);
+    setScale(newScale);
+  };
+
+  // Handle center view
+  const handleCenterView = () => {
+    setPosition({ x: 0, y: 0 });
+  };
+
+  // Find and center on the selected token
+  const handleFocusSelected = () => {
+    if (!selectedTokenId || !containerRef.current) return;
+    
+    const selectedToken = tokens.find(token => token.id === selectedTokenId);
+    if (!selectedToken) return;
+    
+    // Calculate the center position of the container
+    const containerWidth = containerRef.current.clientWidth;
+    const containerHeight = containerRef.current.clientHeight;
+    
+    // Calculate the position to center the token
+    const newX = (containerWidth / 2) - selectedToken.x;
+    const newY = (containerHeight / 2) - selectedToken.y;
+    
+    // Set the new position and zoom in slightly
+    setPosition({ x: newX, y: newY });
+    setScale(Math.min(scale * 1.3, 2));
+  };
+
   return (
     <div 
       ref={containerRef}
@@ -111,22 +148,65 @@ const Map: React.FC = () => {
         <TokenLayer />
       </div>
 
-      {/* Controls overlay */}
+      {/* Roll20-style Zoom Control Panel */}
+      <div className="absolute left-4 top-1/2 -translate-y-1/2 flex flex-col items-center">
+        <div className="glass-panel rounded-lg flex flex-col items-center overflow-hidden">
+          {/* Zoom percentage display */}
+          <div className="bg-secondary/80 w-10 h-10 flex items-center justify-center text-sm font-medium border-b border-white/10">
+            {Math.round(scale * 100)}
+          </div>
+          
+          {/* Zoom in button */}
+          <button 
+            onClick={handleZoomIn}
+            className="w-10 h-10 flex items-center justify-center hover:bg-primary/20 transition-colors"
+            aria-label="Zoom in"
+          >
+            +
+          </button>
+          
+          {/* Zoom slider (visual only) */}
+          <div className="w-1 h-16 bg-white/20 mx-auto relative">
+            <div 
+              className="absolute w-3 h-3 rounded-full bg-primary left-1/2 -translate-x-1/2" 
+              style={{ top: `${((1 - (scale - 0.5) / 2.5) * 100)}%` }}
+            />
+          </div>
+          
+          {/* Zoom out button */}
+          <button 
+            onClick={handleZoomOut}
+            className="w-10 h-10 flex items-center justify-center hover:bg-primary/20 transition-colors"
+            aria-label="Zoom out"
+          >
+            -
+          </button>
+          
+          {/* Focus/target button */}
+          <button 
+            onClick={handleFocusSelected}
+            disabled={!selectedTokenId}
+            className={`w-10 h-10 flex items-center justify-center border-t border-white/10
+              ${selectedTokenId ? 'hover:bg-primary/20 text-primary' : 'text-muted-foreground opacity-50'}
+              transition-colors`}
+            aria-label="Focus on selected token"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z"/>
+              <path d="M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/>
+              <line x1="12" x2="12" y1="2" y2="4"/>
+              <line x1="12" x2="12" y1="20" y2="22"/>
+              <line x1="4" x2="2" y1="12" y2="12"/>
+              <line x1="22" x2="20" y1="12" y2="12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* Map controls */}
       <div className="absolute bottom-4 right-4 flex gap-2 glass-panel p-2 rounded-lg">
         <button 
-          onClick={() => setScale(Math.min(scale * 1.2, 3))}
-          className="w-8 h-8 flex items-center justify-center bg-secondary/80 hover:bg-secondary rounded-full hover-glow"
-        >
-          +
-        </button>
-        <button 
-          onClick={() => setScale(Math.max(scale * 0.8, 0.5))}
-          className="w-8 h-8 flex items-center justify-center bg-secondary/80 hover:bg-secondary rounded-full hover-glow"
-        >
-          -
-        </button>
-        <button 
-          onClick={() => setPosition({ x: 0, y: 0 })}
+          onClick={handleCenterView}
           className="w-8 h-8 flex items-center justify-center bg-secondary/80 hover:bg-secondary rounded-full hover-glow"
         >
           ⌂
