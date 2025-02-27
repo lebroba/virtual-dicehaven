@@ -4,7 +4,7 @@ import { useGame } from "@/context/GameContext";
 import GridOverlay from "./GridOverlay";
 import TokenLayer from "./TokenLayer";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Layers, Hand, PenTool, Ruler, DiceIcon, Settings, ArrowRight, ArrowLeft, PaintBucket, Cursor } from "lucide-react";
+import { Layers, Hand, PenTool, Ruler, Dice1, Settings, MousePointer, PaintBucket } from "lucide-react";
 
 const Map: React.FC = () => {
   const { gridType, gridSize, selectedTokenId, tokens } = useGame();
@@ -122,12 +122,12 @@ const Map: React.FC = () => {
 
   // Action bar tools configuration
   const tools = [
-    { id: 'select', icon: <Cursor size={20} />, tooltip: 'Select Tool' },
+    { id: 'select', icon: <MousePointer size={20} />, tooltip: 'Select Tool' },
     { id: 'pan', icon: <Hand size={20} />, tooltip: 'Pan Tool' },
     { id: 'draw', icon: <PenTool size={20} />, tooltip: 'Drawing Tools' },
     { id: 'measure', icon: <Ruler size={20} />, tooltip: 'Measurement Tool' },
     { id: 'fill', icon: <PaintBucket size={20} />, tooltip: 'Fill Tool' },
-    { id: 'dice', icon: <DiceIcon size={20} />, tooltip: 'Roll Dice' },
+    { id: 'dice', icon: <Dice1 size={20} />, tooltip: 'Roll Dice' },
   ];
 
   // Action bar sections
