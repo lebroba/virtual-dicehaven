@@ -5,6 +5,7 @@ import GridOverlay from "./GridOverlay";
 import TokenLayer from "./TokenLayer";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Layers, Hand, PenTool, Ruler, Dice1, Settings, MousePointer, PaintBucket } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
 
 const Map: React.FC = () => {
   const { gridType, gridSize, selectedTokenId, tokens } = useGame();
@@ -87,6 +88,24 @@ const Map: React.FC = () => {
   const handleZoomOut = () => {
     const newScale = Math.max(scale * 0.8, 0.5);
     setScale(newScale);
+  };
+
+  // Handle zoom slider change
+  const handleZoomSliderChange = (value: number[]) => {
+    const newScale = value[0];
+    setScale(newScale);
+  };
+
+  // Calculate the slider value from scale
+  // Scale range is 0.5 to 3, map to 0-100 for the slider
+  const scaleToSliderValue = (scaleValue: number) => {
+    return ((scaleValue - 0.5) / 2.5) * 100;
+  };
+
+  // Calculate the scale from slider value
+  // Slider range is 0-100, map to 0.5-3 for the scale
+  const sliderValueToScale = (sliderValue: number) => {
+    return 0.5 + (sliderValue / 100) * 2.5;
   };
 
   // Handle center view
@@ -243,11 +262,16 @@ const Map: React.FC = () => {
             +
           </button>
           
-          {/* Zoom slider (visual only) */}
-          <div className="w-1 h-16 bg-white/20 mx-auto relative">
-            <div 
-              className="absolute w-3 h-3 rounded-full bg-primary left-1/2 -translate-x-1/2" 
-              style={{ top: `${((1 - (scale - 0.5) / 2.5) * 100)}%` }}
+          {/* Interactive Zoom slider */}
+          <div className="py-3 px-4 h-20 flex items-center">
+            <Slider
+              orientation="vertical"
+              value={[scaleToSliderValue(scale)]}
+              onValueChange={handleZoomSliderChange}
+              max={100}
+              step={1}
+              className="h-16 w-5"
+              onValueCommit={(val) => setScale(sliderValueToScale(val[0]))}
             />
           </div>
           
