@@ -305,22 +305,6 @@ const Map: React.FC = () => {
         </div>
       </div>
 
-      {/* Map controls */}
-      <div className="absolute bottom-4 right-4 flex gap-2 glass-panel p-2 rounded-lg">
-        <button 
-          onClick={handleCenterView}
-          className="w-8 h-8 flex items-center justify-center bg-secondary/80 hover:bg-secondary rounded-full hover-glow"
-        >
-          ⌂
-        </button>
-        <button 
-          onClick={handleChangeBackground}
-          className="w-8 h-8 flex items-center justify-center bg-secondary/80 hover:bg-secondary rounded-full hover-glow"
-        >
-          🖼️
-        </button>
-      </div>
-
       {/* Map info and status */}
       <div className="absolute top-4 left-4 glass-panel px-3 py-1 rounded-lg text-sm">
         <div className="font-semibold">Battle Map</div>
