@@ -1,5 +1,5 @@
-
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Mission } from '@/types/supabase';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -24,7 +24,8 @@ import {
   Palmtree,
   Target,
   Trophy,
-  AlertTriangle
+  AlertTriangle,
+  Globe
 } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import {
@@ -48,9 +49,15 @@ const MissionDetails: React.FC<MissionDetailsProps> = ({
   onStartMission
 }) => {
   const [configuredMission, setConfiguredMission] = useState<Mission>(mission);
+  const navigate = useNavigate();
   
   const handleStartMission = () => {
     onStartMission(configuredMission);
+  };
+  
+  const handleOpenTacticalMap = () => {
+    onConfigureMission(configuredMission);
+    navigate('/tactical-map');
   };
   
   const handleDifficultyChange = (value: number[]) => {
@@ -314,12 +321,21 @@ const MissionDetails: React.FC<MissionDetailsProps> = ({
         </div>
       </div>
       
-      <div className="mt-6">
+      <div className="mt-6 space-y-2">
         <Button 
           className="w-full font-mono" 
           onClick={handleStartMission}
         >
           START MISSION
+        </Button>
+        
+        <Button 
+          className="w-full font-mono" 
+          variant="outline"
+          onClick={handleOpenTacticalMap}
+        >
+          <Globe className="h-4 w-4 mr-2" />
+          VIEW TACTICAL MAP
         </Button>
       </div>
     </div>

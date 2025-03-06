@@ -8,6 +8,7 @@ import Landing from "./pages/Landing";
 import CommandCenter from "./pages/CommandCenter";
 import ShipSelection from "./pages/ShipSelection";
 import MissionSelection from "./pages/MissionSelection";
+import TacticalMap from "./pages/TacticalMap";
 import NotFound from "./pages/NotFound";
 import { useEffect } from "react";
 import { AuthProvider } from "./context/AuthContext";
@@ -32,6 +33,7 @@ const App = () => {
               <Route path="/command-center" element={<CommandCenter />} />
               <Route path="/ship-selection" element={<ShipSelection />} />
               <Route path="/mission-selection" element={<MissionSelection />} />
+              <Route path="/tactical-map" element={<TacticalMap />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
