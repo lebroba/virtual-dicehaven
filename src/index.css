@@ -1,4 +1,6 @@
 
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -55,8 +57,8 @@
     --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 263.4 70% 50.4%;
-    --primary-foreground: 210 20% 98%;
+    --primary: 175 70% 41%;
+    --primary-foreground: 0 0% 98%;
 
     --secondary: 215 27.9% 16.9%;
     --secondary-foreground: 0 0% 98%;
@@ -64,7 +66,7 @@
     --muted: 215 27.9% 15.9%;
     --muted-foreground: 217.9 10.6% 64.9%;
 
-    --accent: 263.4 70% 50.4%;
+    --accent: 175 70% 41%;
     --accent-foreground: 0 0% 98%;
 
     --destructive: 0 62.8% 30.6%;
@@ -72,16 +74,16 @@
 
     --border: 215 27.9% 16.9%;
     --input: 215 27.9% 16.9%;
-    --ring: 263.4 70% 50.4%;
+    --ring: 175 70% 41%;
 
     --sidebar-background: 240 10% 3.9%;
     --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 263.4 70% 50.4%;
+    --sidebar-primary: 175 70% 41%;
     --sidebar-primary-foreground: 0 0% 98%;
     --sidebar-accent: 215 27.9% 16.9%;
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-border: 215 27.9% 16.9%;
-    --sidebar-ring: 263.4 70% 50.4%;
+    --sidebar-ring: 175 70% 41%;
   }
 }
 
@@ -93,6 +95,14 @@
   body {
     @apply bg-background text-foreground antialiased min-h-screen;
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Barlow Condensed', sans-serif;
+  }
+  
+  .font-mono {
+    font-family: 'Roboto Mono', monospace;
   }
 }
 
@@ -124,6 +134,18 @@
 
   .hover-glow {
     @apply transition-all duration-300 hover:shadow-glow;
+  }
+  
+  .pulse-glow {
+    @apply animate-[pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite] drop-shadow-[0_0_8px_rgba(20,120,108,0.7)];
+  }
+  
+  .shadow-glow {
+    box-shadow: 0 0 15px rgba(20, 120, 108, 0.3);
+  }
+  
+  .bg-gradient-radial {
+    background-image: radial-gradient(circle, var(--tw-gradient-stops));
   }
 
   .perspective-500 {
