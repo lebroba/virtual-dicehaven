@@ -19,9 +19,9 @@ import {
   Moon,
   Mountain,
   Waves,
-  Islands,
+  Map,
   Snowflake,
-  PalmTree,
+  Palmtree,
   Target,
   Trophy,
   AlertTriangle
@@ -99,11 +99,11 @@ const MissionDetails: React.FC<MissionDetailsProps> = ({
       case 'coastal_waters':
         return <Shield className="h-4 w-4" />;
       case 'archipelago':
-        return <Islands className="h-4 w-4" />;
+        return <Map className="h-4 w-4" />;
       case 'arctic':
         return <Snowflake className="h-4 w-4" />;
       case 'tropical':
-        return <PalmTree className="h-4 w-4" />;
+        return <Palmtree className="h-4 w-4" />;
       default:
         return <Mountain className="h-4 w-4" />;
     }
@@ -292,7 +292,7 @@ const MissionDetails: React.FC<MissionDetailsProps> = ({
                 </SelectItem>
                 <SelectItem value="archipelago">
                   <div className="flex items-center gap-2">
-                    <Islands className="h-4 w-4" />
+                    <Map className="h-4 w-4" />
                     <span>Archipelago</span>
                   </div>
                 </SelectItem>
@@ -304,7 +304,7 @@ const MissionDetails: React.FC<MissionDetailsProps> = ({
                 </SelectItem>
                 <SelectItem value="tropical">
                   <div className="flex items-center gap-2">
-                    <PalmTree className="h-4 w-4" />
+                    <Palmtree className="h-4 w-4" />
                     <span>Tropical</span>
                   </div>
                 </SelectItem>
