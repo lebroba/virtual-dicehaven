@@ -7,6 +7,8 @@ import Sidebar from "@/components/Sidebar";
 import AuthButton from "@/components/auth/AuthButton";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { Ship } from "lucide-react";
 
 const CommandCenter: React.FC = () => {
   const { user, loading } = useAuth();
@@ -61,6 +63,15 @@ const CommandCenter: React.FC = () => {
               </div>
             </div>
             <nav className="flex items-center gap-6">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/ship-selection')}
+                className="text-sm hover:text-primary transition-colors flex items-center gap-1"
+              >
+                <Ship className="h-4 w-4" />
+                <span className="font-mono text-xs">SHIP SELECTION</span>
+              </Button>
               <a href="#" className="text-sm hover:text-primary transition-colors">Maps</a>
               <a href="#" className="text-sm hover:text-primary transition-colors">Characters</a>
               <a href="#" className="text-sm hover:text-primary transition-colors">Settings</a>

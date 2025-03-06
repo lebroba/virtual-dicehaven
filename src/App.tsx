@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Landing from "./pages/Landing";
 import CommandCenter from "./pages/CommandCenter";
+import ShipSelection from "./pages/ShipSelection";
 import NotFound from "./pages/NotFound";
 import { useEffect } from "react";
 import { AuthProvider } from "./context/AuthContext";
@@ -28,6 +29,7 @@ const App = () => {
             <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/command-center" element={<CommandCenter />} />
+              <Route path="/ship-selection" element={<ShipSelection />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
