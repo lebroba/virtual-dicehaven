@@ -77,6 +77,53 @@ export interface Database {
           updated_at?: string
         }
       }
+      missions: {
+        Row: {
+          id: string
+          name: string
+          type: MissionType
+          description: string
+          image_url: string | null
+          difficulty: number
+          weather: WeatherCondition
+          time_of_day: TimeOfDay
+          terrain: TerrainType
+          objective: string
+          reward: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          name: string
+          type: MissionType
+          description: string
+          image_url?: string | null
+          difficulty: number
+          weather: WeatherCondition
+          time_of_day: TimeOfDay
+          terrain: TerrainType
+          objective: string
+          reward?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          type?: MissionType
+          description?: string
+          image_url?: string | null
+          difficulty?: number
+          weather?: WeatherCondition
+          time_of_day?: TimeOfDay
+          terrain?: TerrainType
+          objective?: string
+          reward?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
@@ -92,6 +139,13 @@ export interface Database {
 
 export type Profile = Database['public']['Tables']['profiles']['Row']
 export type Ship = Database['public']['Tables']['ships']['Row']
+export type Mission = Database['public']['Tables']['missions']['Row']
+
+export type MissionType = 'coastal_defense' | 'patrol' | 'escort' | 'combat'
+export type WeatherCondition = 'clear' | 'cloudy' | 'rainy' | 'stormy' | 'foggy'
+export type TimeOfDay = 'dawn' | 'day' | 'dusk' | 'night'
+export type TerrainType = 'open_ocean' | 'coastal_waters' | 'archipelago' | 'arctic' | 'tropical'
+
 export type ShipSpecifications = {
   displacement: number
   length: number

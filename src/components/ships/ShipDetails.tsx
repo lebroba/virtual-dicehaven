@@ -1,12 +1,14 @@
 
-import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Ship, ShipSpecifications } from '@/types/supabase';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Anchor, Shield, Gauge, Ruler, Users, Bomb, FileBarChart, Database, Target, Radio } from 'lucide-react';
-import ShipSystemControl from './ShipSystemControl';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ShipModel from './ShipModel';
+import ShipSystemControl from './ShipSystemControl';
+import { ShieldCheck, ArrowRight, GaugeCircle, Anchor, Users, FileBarChart } from 'lucide-react';
 
 interface ShipDetailsProps {
   ship: Ship;
@@ -14,254 +16,315 @@ interface ShipDetailsProps {
   onToggleSystem: (type: 'systems' | 'sensors', index: number) => void;
 }
 
-const ShipDetails: React.FC<ShipDetailsProps> = ({ 
-  ship, 
-  onSelectShip,
-  onToggleSystem
-}) => {
-  const [activeTab, setActiveTab] = useState('overview');
+const ShipDetails: React.FC<ShipDetailsProps> = ({ ship, onSelectShip, onToggleSystem }) => {
+  const navigate = useNavigate();
   const specs = ship.specifications as ShipSpecifications;
 
-  const renderOverview = () => (
-    <div className="space-y-4">
-      <p className="text-sm">{ship.description}</p>
-      
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-sm">
-            <Anchor className="h-4 w-4 text-primary" />
-            <span className="font-mono">Displacement:</span>
-            <span className="ml-auto">{specs.displacement} tons</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm">
-            <Ruler className="h-4 w-4 text-primary" />
-            <span className="font-mono">Length:</span>
-            <span className="ml-auto">{specs.length} m</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm">
-            <Ruler className="h-4 w-4 text-primary" />
-            <span className="font-mono">Beam:</span>
-            <span className="ml-auto">{specs.beam} m</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm">
-            <Ruler className="h-4 w-4 text-primary" />
-            <span className="font-mono">Draft:</span>
-            <span className="ml-auto">{specs.draft} m</span>
-          </div>
-        </div>
-        
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-sm">
-            <Gauge className="h-4 w-4 text-primary" />
-            <span className="font-mono">Speed:</span>
-            <span className="ml-auto">{specs.speed} knots</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm">
-            <Radio className="h-4 w-4 text-primary" />
-            <span className="font-mono">Range:</span>
-            <span className="ml-auto">{specs.range} nm</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm">
-            <Users className="h-4 w-4 text-primary" />
-            <span className="font-mono">Crew:</span>
-            <span className="ml-auto">{specs.crew}</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm">
-            <Shield className="h-4 w-4 text-primary" />
-            <span className="font-mono">AEGIS:</span>
-            <span className="ml-auto">Baseline {specs.aegisBaseline}</span>
-          </div>
-        </div>
-      </div>
-      
-      <div className="space-y-2">
-        <h3 className="text-sm font-mono">COMBAT RATINGS</h3>
-        
-        <div className="space-y-3">
-          <div className="space-y-1">
-            <div className="flex justify-between text-xs">
-              <span className="font-mono">FIREPOWER</span>
-              <span className="font-mono">{specs.stats.firepower}%</span>
-            </div>
-            <div className="h-2 w-full bg-muted rounded-sm overflow-hidden">
-              <div 
-                className="h-full bg-primary rounded-sm" 
-                style={{ width: `${specs.stats.firepower}%` }}
-              />
-            </div>
-          </div>
-          
-          <div className="space-y-1">
-            <div className="flex justify-between text-xs">
-              <span className="font-mono">DEFENSE</span>
-              <span className="font-mono">{specs.stats.defense}%</span>
-            </div>
-            <div className="h-2 w-full bg-muted rounded-sm overflow-hidden">
-              <div 
-                className="h-full bg-primary rounded-sm" 
-                style={{ width: `${specs.stats.defense}%` }}
-              />
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-1">
-              <div className="flex justify-between text-xs">
-                <span className="font-mono">ANTI-AIR</span>
-              </div>
-              <div className="h-2 w-full bg-muted rounded-sm overflow-hidden">
-                <div 
-                  className="h-full bg-primary rounded-sm" 
-                  style={{ width: `${specs.stats.antiAir}%` }}
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-1">
-              <div className="flex justify-between text-xs">
-                <span className="font-mono">ANTI-SURFACE</span>
-              </div>
-              <div className="h-2 w-full bg-muted rounded-sm overflow-hidden">
-                <div 
-                  className="h-full bg-primary rounded-sm" 
-                  style={{ width: `${specs.stats.antiSurface}%` }}
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-1">
-              <div className="flex justify-between text-xs">
-                <span className="font-mono">ANTI-SUB</span>
-              </div>
-              <div className="h-2 w-full bg-muted rounded-sm overflow-hidden">
-                <div 
-                  className="h-full bg-primary rounded-sm" 
-                  style={{ width: `${specs.stats.antiSubmarine}%` }}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderWeapons = () => (
-    <div className="space-y-4">
-      <div>
-        <h3 className="text-sm font-mono mb-2">VERTICAL LAUNCH SYSTEM</h3>
-        <div className="grid grid-cols-3 gap-2 mb-4">
-          <div className="border border-muted rounded-md p-2 text-center bg-muted/10">
-            <p className="text-xs text-muted-foreground font-mono">FORWARD</p>
-            <p className="text-xl font-mono">{specs.vls.forwardCells}</p>
-            <p className="text-[10px] text-muted-foreground font-mono">CELLS</p>
-          </div>
-          <div className="border border-primary rounded-md p-2 text-center bg-primary/5">
-            <p className="text-xs text-primary font-mono">TOTAL</p>
-            <p className="text-xl font-mono">{specs.vls.totalCells}</p>
-            <p className="text-[10px] text-muted-foreground font-mono">CELLS</p>
-          </div>
-          <div className="border border-muted rounded-md p-2 text-center bg-muted/10">
-            <p className="text-xs text-muted-foreground font-mono">AFT</p>
-            <p className="text-xl font-mono">{specs.vls.aftCells}</p>
-            <p className="text-[10px] text-muted-foreground font-mono">CELLS</p>
-          </div>
-        </div>
-        
-        <h4 className="text-xs font-mono text-muted-foreground mb-2">MISSILE LOADOUT</h4>
-        <div className="space-y-2">
-          {specs.vls.loadout.map((missile, index) => (
-            <div key={index} className="flex justify-between items-center p-2 border border-muted rounded-md bg-background/60">
-              <div className="flex items-center gap-2">
-                <Target className="h-4 w-4 text-primary" />
-                <span className="text-sm font-mono">{missile.missileType}</span>
-              </div>
-              <span className="text-sm font-mono">{missile.count}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-      
-      <div>
-        <h3 className="text-sm font-mono mb-2">WEAPON SYSTEMS</h3>
-        <div className="space-y-2">
-          {specs.weapons.map((weapon, index) => (
-            <div key={index} className="flex justify-between items-center p-2 border border-muted rounded-md bg-background/60">
-              <div>
-                <p className="text-sm font-mono">{weapon.name}</p>
-                <p className="text-xs text-muted-foreground">{weapon.description}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-sm font-mono">{weapon.count}x</p>
-                {weapon.ammunition && (
-                  <p className="text-xs text-muted-foreground font-mono">{weapon.ammunition} rounds</p>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-
+  const handleSelectForMission = () => {
+    navigate(`/mission-selection?shipId=${ship.id}`);
+  };
+  
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-none space-y-2 mb-4">
-        <h2 className="text-2xl font-mono tracking-tight">{ship.name}</h2>
-        <div className="flex justify-between">
-          <p className="text-sm text-muted-foreground">
-            {ship.class} Class &middot; {ship.nation}
+      <div className="flex justify-between items-start">
+        <div>
+          <h2 className="text-xl font-mono tracking-tight flex items-center">
+            <Anchor className="mr-2 h-5 w-5 text-primary" />
+            {ship.name}
+          </h2>
+          <p className="text-sm text-muted-foreground font-mono">
+            {ship.class} Class &middot; {ship.type} &middot; AEGIS BL {specs.aegisBaseline}
           </p>
-          <Button 
-            variant="default" 
-            size="sm"
-            onClick={onSelectShip}
-            className="font-mono text-xs"
-          >
-            SELECT VESSEL
-          </Button>
         </div>
+        <Badge variant="outline" className="font-mono uppercase">
+          {ship.nation}
+        </Badge>
       </div>
       
-      <div className="relative h-48 mb-4 bg-muted/20 rounded-md overflow-hidden border border-muted">
-        <ShipModel modelUrl={ship.model_url} />
-      </div>
+      <Separator className="my-4" />
       
-      <Tabs 
-        value={activeTab} 
-        onValueChange={setActiveTab}
-        className="flex-1 flex flex-col"
-      >
-        <TabsList className="grid grid-cols-3 mb-2">
-          <TabsTrigger value="overview" className="text-xs font-mono">
-            <FileBarChart className="h-3 w-3 mr-1" /> 
+      <Tabs defaultValue="overview" className="flex-1 flex flex-col">
+        <TabsList>
+          <TabsTrigger value="overview" className="text-xs">
             OVERVIEW
           </TabsTrigger>
-          <TabsTrigger value="weapons" className="text-xs font-mono">
-            <Bomb className="h-3 w-3 mr-1" /> 
+          <TabsTrigger value="systems" className="text-xs">
+            SYSTEMS
+          </TabsTrigger>
+          <TabsTrigger value="weapons" className="text-xs">
             WEAPONS
           </TabsTrigger>
-          <TabsTrigger value="systems" className="text-xs font-mono">
-            <Database className="h-3 w-3 mr-1" /> 
-            SYSTEMS
+          <TabsTrigger value="specs" className="text-xs">
+            SPECIFICATIONS
           </TabsTrigger>
         </TabsList>
         
-        <ScrollArea className="flex-1">
-          <TabsContent value="overview" className="m-0 p-2">
-            {renderOverview()}
+        <div className="flex-1 overflow-y-auto mt-4">
+          <TabsContent value="overview" className="h-full">
+            <div className="grid grid-cols-2 gap-4 h-full">
+              <div className="glass-panel bg-muted/10 border border-border p-4 rounded-md h-full">
+                <h3 className="text-sm font-mono text-muted-foreground mb-3">SHIP PROFILE</h3>
+                <p className="text-sm mb-4">{ship.description}</p>
+                
+                <h4 className="text-xs font-mono text-muted-foreground mt-4 mb-2">COMBAT RATINGS</h4>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                  <div className="space-y-1">
+                    <p className="text-[10px] text-muted-foreground font-mono uppercase">Firepower</p>
+                    <div className="h-2 w-full bg-muted rounded-sm overflow-hidden">
+                      <div 
+                        className="h-full bg-primary rounded-sm" 
+                        style={{ width: `${specs.stats.firepower}%` }}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] text-muted-foreground font-mono uppercase">Defense</p>
+                    <div className="h-2 w-full bg-muted rounded-sm overflow-hidden">
+                      <div 
+                        className="h-full bg-primary rounded-sm" 
+                        style={{ width: `${specs.stats.defense}%` }}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] text-muted-foreground font-mono uppercase">Speed</p>
+                    <div className="h-2 w-full bg-muted rounded-sm overflow-hidden">
+                      <div 
+                        className="h-full bg-primary rounded-sm" 
+                        style={{ width: `${specs.stats.speed}%` }}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] text-muted-foreground font-mono uppercase">Range</p>
+                    <div className="h-2 w-full bg-muted rounded-sm overflow-hidden">
+                      <div 
+                        className="h-full bg-primary rounded-sm" 
+                        style={{ width: `${specs.stats.range}%` }}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] text-muted-foreground font-mono uppercase">Anti-Air</p>
+                    <div className="h-2 w-full bg-muted rounded-sm overflow-hidden">
+                      <div 
+                        className="h-full bg-primary rounded-sm" 
+                        style={{ width: `${specs.stats.antiAir}%` }}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] text-muted-foreground font-mono uppercase">Anti-Surface</p>
+                    <div className="h-2 w-full bg-muted rounded-sm overflow-hidden">
+                      <div 
+                        className="h-full bg-primary rounded-sm" 
+                        style={{ width: `${specs.stats.antiSurface}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-3 gap-3 mt-6">
+                  <div className="glass-panel border border-border rounded-md p-3 flex flex-col items-center">
+                    <GaugeCircle className="h-4 w-4 text-primary mb-1" />
+                    <span className="text-sm font-bold">{specs.speed}</span>
+                    <span className="text-[10px] text-muted-foreground font-mono">KNOTS</span>
+                  </div>
+                  <div className="glass-panel border border-border rounded-md p-3 flex flex-col items-center">
+                    <Users className="h-4 w-4 text-primary mb-1" />
+                    <span className="text-sm font-bold">{specs.crew}</span>
+                    <span className="text-[10px] text-muted-foreground font-mono">CREW</span>
+                  </div>
+                  <div className="glass-panel border border-border rounded-md p-3 flex flex-col items-center">
+                    <FileBarChart className="h-4 w-4 text-primary mb-1" />
+                    <span className="text-sm font-bold">{specs.vls.totalCells}</span>
+                    <span className="text-[10px] text-muted-foreground font-mono">VLS CELLS</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="glass-panel bg-muted/10 border border-border p-4 rounded-md h-full">
+                <h3 className="text-sm font-mono text-muted-foreground mb-3">SHIP MODEL</h3>
+                <div className="flex-1 h-[calc(100%-2rem)] rounded-md overflow-hidden bg-background/60">
+                  <ShipModel modelUrl={ship.model_url} />
+                </div>
+              </div>
+            </div>
           </TabsContent>
-          <TabsContent value="weapons" className="m-0 p-2">
-            {renderWeapons()}
+          
+          <TabsContent value="systems" className="h-full">
+            <div className="glass-panel bg-muted/10 border border-border p-4 rounded-md h-full">
+              <ShipSystemControl 
+                specifications={specs} 
+                onToggleSystem={onToggleSystem} 
+              />
+            </div>
           </TabsContent>
-          <TabsContent value="systems" className="m-0 p-2">
-            <ShipSystemControl 
-              specifications={specs} 
-              onToggleSystem={onToggleSystem}
-            />
+          
+          <TabsContent value="weapons" className="h-full">
+            <div className="glass-panel bg-muted/10 border border-border p-4 rounded-md h-full">
+              <h3 className="text-sm font-mono text-muted-foreground mb-3">WEAPONS LOADOUT</h3>
+              
+              <div className="mb-4">
+                <h4 className="text-xs font-mono text-muted-foreground mb-2">VLS CONFIGURATION</h4>
+                <div className="grid grid-cols-3 gap-3 mb-3">
+                  <div className="glass-panel border border-border rounded-md p-3 flex flex-col items-center">
+                    <span className="text-xs text-muted-foreground font-mono">FORWARD</span>
+                    <span className="text-xl font-bold">{specs.vls.forwardCells}</span>
+                    <span className="text-[10px] text-muted-foreground">CELLS</span>
+                  </div>
+                  <div className="glass-panel border border-border rounded-md p-3 flex flex-col items-center">
+                    <span className="text-xs text-muted-foreground font-mono">AFT</span>
+                    <span className="text-xl font-bold">{specs.vls.aftCells}</span>
+                    <span className="text-[10px] text-muted-foreground">CELLS</span>
+                  </div>
+                  <div className="glass-panel border border-border rounded-md p-3 flex flex-col items-center">
+                    <span className="text-xs text-muted-foreground font-mono">TOTAL</span>
+                    <span className="text-xl font-bold">{specs.vls.totalCells}</span>
+                    <span className="text-[10px] text-muted-foreground">CELLS</span>
+                  </div>
+                </div>
+                
+                <h4 className="text-xs font-mono text-muted-foreground mb-2">LOADOUT</h4>
+                <div className="space-y-2">
+                  {specs.vls.loadout.map((missile, index) => (
+                    <div key={index} className="flex justify-between items-center p-2 border border-muted rounded-md bg-background/60">
+                      <span className="text-sm font-mono">{missile.missileType}</span>
+                      <span className="text-sm font-mono">{missile.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <h4 className="text-xs font-mono text-muted-foreground mb-2">WEAPON SYSTEMS</h4>
+              <div className="space-y-2">
+                {specs.weapons.map((weapon, index) => (
+                  <div key={index} className="p-2 border border-muted rounded-md bg-background/60">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h5 className="text-sm font-medium font-mono">{weapon.name}</h5>
+                        <p className="text-xs text-muted-foreground">{weapon.description}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="font-mono text-xs">
+                          x{weapon.count}
+                        </Badge>
+                        <p className={`text-xs font-mono ${
+                          weapon.status === 'operational' ? 'text-green-500' : 
+                          weapon.status === 'damaged' ? 'text-yellow-500' : 
+                          weapon.status === 'offline' ? 'text-gray-500' : 
+                          'text-red-500'
+                        }`}>
+                          {weapon.status.toUpperCase()}
+                        </p>
+                      </div>
+                    </div>
+                    {weapon.ammunition !== undefined && (
+                      <div className="mt-2">
+                        <p className="text-xs text-muted-foreground font-mono">AMMUNITION: {weapon.ammunition}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
           </TabsContent>
-        </ScrollArea>
+          
+          <TabsContent value="specs" className="h-full">
+            <div className="glass-panel bg-muted/10 border border-border p-4 rounded-md h-full overflow-y-auto">
+              <h3 className="text-sm font-mono text-muted-foreground mb-3">TECHNICAL SPECIFICATIONS</h3>
+              
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground font-mono">DISPLACEMENT</p>
+                    <p className="text-sm">{specs.displacement.toLocaleString()} tons</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground font-mono">LENGTH</p>
+                    <p className="text-sm">{specs.length} m</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground font-mono">BEAM</p>
+                    <p className="text-sm">{specs.beam} m</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground font-mono">DRAFT</p>
+                    <p className="text-sm">{specs.draft} m</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground font-mono">MAX SPEED</p>
+                    <p className="text-sm">{specs.speed} knots</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground font-mono">RANGE</p>
+                    <p className="text-sm">{specs.range.toLocaleString()} nm</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground font-mono">CREW</p>
+                    <p className="text-sm">{specs.crew} personnel</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground font-mono">AEGIS BASELINE</p>
+                    <p className="text-sm">{specs.aegisBaseline}</p>
+                  </div>
+                </div>
+                
+                <Separator />
+                
+                <div>
+                  <p className="text-xs text-muted-foreground font-mono mb-2">ANTI-AIR CAPABILITY</p>
+                  <div className="h-2 w-full bg-muted rounded-sm overflow-hidden">
+                    <div 
+                      className="h-full bg-primary rounded-sm" 
+                      style={{ width: `${specs.stats.antiAir}%` }}
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <p className="text-xs text-muted-foreground font-mono mb-2">ANTI-SURFACE CAPABILITY</p>
+                  <div className="h-2 w-full bg-muted rounded-sm overflow-hidden">
+                    <div 
+                      className="h-full bg-primary rounded-sm" 
+                      style={{ width: `${specs.stats.antiSurface}%` }}
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <p className="text-xs text-muted-foreground font-mono mb-2">ANTI-SUBMARINE CAPABILITY</p>
+                  <div className="h-2 w-full bg-muted rounded-sm overflow-hidden">
+                    <div 
+                      className="h-full bg-primary rounded-sm" 
+                      style={{ width: `${specs.stats.antiSubmarine}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+        </div>
       </Tabs>
+      
+      <div className="mt-4 flex gap-2">
+        <Button 
+          variant="default" 
+          className="w-1/2 font-mono" 
+          onClick={onSelectShip}
+        >
+          <ShieldCheck className="mr-2 h-4 w-4" />
+          SELECT VESSEL
+        </Button>
+        <Button 
+          variant="outline" 
+          className="w-1/2 font-mono" 
+          onClick={handleSelectForMission}
+        >
+          SELECT MISSION
+          <ArrowRight className="ml-2 h-4 w-4" />
+        </Button>
+      </div>
     </div>
   );
 };
