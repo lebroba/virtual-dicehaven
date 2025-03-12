@@ -1,45 +1,11 @@
 
-import React, { useEffect } from "react";
-import { GameProvider, useGame } from "@/context/GameContext";
+import React from "react";
+import { GameProvider } from "@/context/GameContext";
 import Map from "@/components/Map";
 import Sidebar from "@/components/Sidebar";
-import { generateAllSymbolCombinations, getRandomPosition } from "@/utils/symbolTestUtils";
-import { toast } from "sonner";
 
 // Inner component to access context
 const CommandCenterContent: React.FC = () => {
-  const { addToken } = useGame();
-
-  // Add test symbols on mount
-  useEffect(() => {
-    // Get all possible symbol combinations
-    const symbolCombinations = generateAllSymbolCombinations();
-    
-    // Generate a random position for each symbol
-    symbolCombinations.forEach((combo, index) => {
-      const position = getRandomPosition(800, 600);
-      
-      // Add the token with this symbol type
-      addToken({
-        id: combo.id,
-        name: `${combo.identity} ${combo.domain}`,
-        image: "", // Not using image for symbols
-        x: position.x,
-        y: position.y,
-        size: 40,
-        controlledBy: "player",
-        visible: true,
-        conditions: [],
-        symbolType: {
-          identity: combo.identity,
-          domain: combo.domain
-        }
-      });
-    });
-
-    toast.success(`Added ${symbolCombinations.length} military symbols to the map`);
-  }, [addToken]);
-
   return (
     <div className="min-h-screen bg-background text-foreground dark flex flex-col">
       {/* Header */}
