@@ -1,5 +1,10 @@
-
 import React, { createContext, useState, useContext, ReactNode } from "react";
+import { SymbolDomain, SymbolIdentity } from "@/components/MilitarySymbol";
+
+export type SymbolType = {
+  identity: SymbolIdentity;
+  domain: SymbolDomain;
+};
 
 export type TokenType = {
   id: string;
@@ -12,6 +17,7 @@ export type TokenType = {
   visible: boolean;
   conditions: string[];
   initiative?: number;
+  symbolType?: SymbolType;
 };
 
 export type GridType = "square" | "hex" | "none";
