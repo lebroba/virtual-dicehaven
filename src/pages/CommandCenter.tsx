@@ -1,11 +1,36 @@
 
-import React from "react";
-import { GameProvider } from "@/context/GameContext";
+import React, { useEffect } from "react";
+import { GameProvider, useGame } from "@/context/GameContext";
 import Map from "@/components/Map";
 import Sidebar from "@/components/Sidebar";
+import { toast } from "sonner";
 
 // Inner component to access context
 const CommandCenterContent: React.FC = () => {
+  const { addToken } = useGame();
+
+  // Add a friendly sea surface unit on mount
+  useEffect(() => {
+    // Add a friendly sea surface unit
+    addToken({
+      id: `friendly-sea-surface-${Date.now()}`,
+      name: "Friendly Sea Surface Unit",
+      image: "", // Not using image for symbols
+      x: 400, // Center of the map (assuming 800 width)
+      y: 300, // Center of the map (assuming 600 height)
+      size: 50,
+      controlledBy: "player",
+      visible: true,
+      conditions: [],
+      symbolType: {
+        identity: "friend",
+        domain: "sea-surface"
+      }
+    });
+
+    toast.success("Added a friendly sea surface unit to the map");
+  }, [addToken]);
+
   return (
     <div className="min-h-screen bg-background text-foreground dark flex flex-col">
       {/* Header */}
