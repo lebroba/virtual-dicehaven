@@ -55,7 +55,7 @@ const TokenLayer: React.FC = () => {
           onDragStart={(e) => handleDragStart(e, token.id)}
           onClick={() => setSelectedTokenId(token.id)}
           className={`absolute token overflow-hidden cursor-move ${
-            selectedTokenId === token.id ? "z-10" : "z-1"
+            selectedTokenId === token.id ? "ring-2 ring-white ring-opacity-70" : ""
           }`}
           style={{
             left: token.x,
@@ -69,7 +69,7 @@ const TokenLayer: React.FC = () => {
               identity={token.symbolType.identity}
               domain={token.symbolType.domain}
               size={token.size}
-              selected={selectedTokenId === token.id}
+              selected={false} // Don't show selection effects
             />
           ) : (
             <img 
