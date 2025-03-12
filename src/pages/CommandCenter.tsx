@@ -29,7 +29,7 @@ const CommandCenterContent: React.FC = () => {
     });
 
     toast.success("Added a friendly sea surface unit to the map");
-  }, [addToken]);
+  }, []);
 
   return (
     <div className="min-h-screen bg-background text-foreground dark flex flex-col">
