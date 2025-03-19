@@ -1,7 +1,7 @@
 
 import React, { useEffect } from "react";
 import { GameProvider, useGame } from "@/context/GameContext";
-import Map from "@/components/Map";
+import GridMapComponent from "@/components/GridMapComponent";
 import Sidebar from "@/components/Sidebar";
 import { toast } from "sonner";
 
@@ -62,7 +62,7 @@ const CommandCenterContent: React.FC = () => {
       <main className="flex-1 flex overflow-hidden p-4 gap-4">
         {/* Map area */}
         <div className="flex-grow h-[calc(100vh-8rem)] overflow-hidden rounded-lg shadow-xl animate-fade-in">
-          <Map />
+          <GridMapComponent width={800} height={600} />
         </div>
 
         {/* Sidebar */}
