@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { MapConfig, GridCellData, TerrainType, ErrorResponse, MapGridSystem } from '@/types/MapGridSystem';
 import { toast } from 'sonner';
@@ -178,7 +177,7 @@ export const useMapGridSystem = (): MapGridSystem => {
       );
     }
     
-    return {}; // Empty object indicates success
+    return { errorCode: 0, errorMessage: '' }; // Success with no error
   };
 
   // Get the terrain type for a specific grid cell
