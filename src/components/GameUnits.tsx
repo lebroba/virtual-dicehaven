@@ -1,8 +1,7 @@
 
-import React from 'react';
-import { UnitData } from '@/types/UnitTypes';
-import { useUnitRepresentation } from '@/hooks/useUnitRepresentation';
-import UnitRenderer from './UnitRenderer';
+import React, { useEffect, useState } from 'react';
+import { UnitData, UnitRepresentation } from '@/types/UnitTypes';
+import UnitRepresentationImpl from './UnitRepresentationImpl';
 import { useGame } from '@/context/GameContext';
 
 interface GameUnitsProps {
@@ -12,20 +11,41 @@ interface GameUnitsProps {
 const GameUnits: React.FC<GameUnitsProps> = ({ units: propUnits }) => {
   // Get game context
   const { gridSize } = useGame();
+  const [unitRepresentation, setUnitRepresentation] = useState<UnitRepresentation | null>(null);
   
-  // Initialize unit representation hook
-  const unitRepresentation = useUnitRepresentation();
-  
-  // Use units from props or you could use units from context if available
-  const units = propUnits || [
-    // Some default units for testing or you could get them from context
-  ];
+  // Use units from props or default to empty array
+  const units = propUnits || [];
+
+  // Set the units in the unitRepresentation when they change
+  useEffect(() => {
+    if (unitRepresentation && units.length > 0) {
+      unitRepresentation.setUnits(units);
+    }
+  }, [units, unitRepresentation]);
+
+  const handleUnitSelected = (event: { unitId: string | null }) => {
+    console.log('Unit selected:', event.unitId);
+  };
+
+  const handleUnitHover = (event: { unitId: string | null; position: { x: number; y: number } }) => {
+    // Handle hover logic here
+  };
+
+  const handleUnitContextMenu = (unitId: string, position: { x: number; y: number }) => {
+    console.log('Context menu opened for unit:', unitId, 'at position:', position);
+  };
+
+  const handleUnitRepresentationReady = (representation: UnitRepresentation) => {
+    setUnitRepresentation(representation);
+  };
 
   return (
-    <UnitRenderer 
-      units={units} 
-      unitRepresentation={unitRepresentation} 
-      gridSize={gridSize} 
+    <UnitRepresentationImpl
+      onUnitSelected={handleUnitSelected}
+      onUnitHover={handleUnitHover}
+      onUnitContextMenu={handleUnitContextMenu}
+      onUnitRepresentationReady={handleUnitRepresentationReady}
+      gridSize={gridSize}
     />
   );
 };

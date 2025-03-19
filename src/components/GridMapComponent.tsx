@@ -1,10 +1,8 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { useMapGridSystem } from "@/hooks/useMapGridSystem";
 import { MapConfig, GridCellData } from "@/types/MapGridSystem";
 import { useGame } from "@/context/GameContext";
 import TokenLayer from "./TokenLayer";
-import GameUnits from "./GameUnits";
 import { useUnitContext } from "@/context/UnitContext";
 import { toast } from "sonner";
 
@@ -212,8 +210,7 @@ const GridMapComponent: React.FC<GridMapComponentProps> = ({ width, height }) =>
       {/* Token layer */}
       <TokenLayer />
       
-      {/* Unit layer - render the game units */}
-      {units.length > 0 && <GameUnits units={units} />}
+      {/* Units are now rendered by the GameUnits component in the CommandCenter */}
       
       {/* Show grid coordinates for debugging */}
       <div className="absolute top-4 left-4 glass-panel px-3 py-1 rounded-lg text-sm">

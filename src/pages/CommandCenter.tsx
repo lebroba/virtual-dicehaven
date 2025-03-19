@@ -6,10 +6,55 @@ import Sidebar from "@/components/Sidebar";
 import { toast } from "sonner";
 import { UnitProvider } from "@/context/UnitContext";
 import GameUnits from "@/components/GameUnits";
+import { UnitData } from "@/types/UnitTypes";
 
 // Inner component to access context
 const CommandCenterContent: React.FC = () => {
   const { addToken } = useGame();
+
+  // Sample unit data for testing
+  const sampleUnits: UnitData[] = [
+    {
+      id: `ship-1`,
+      type: "ship",
+      playerId: "player1",
+      position: { x: 300, y: 400 },
+      rotation: 45,
+      speed: 10,
+      turningRadius: 20,
+      weaponRanges: { "torpedo": 100, "cannon": 50 },
+      damageValues: { "torpedo": 50, "cannon": 20 },
+      ammunition: { "torpedo": 5, "cannon": 100 },
+      detectionRanges: {
+        radar: 200,
+        sonar: 150,
+        visual: 50
+      },
+      health: 100,
+      maxHealth: 100,
+      status: []
+    },
+    {
+      id: `aircraft-1`,
+      type: "aircraft",
+      playerId: "player2",
+      position: { x: 500, y: 200 },
+      rotation: 180,
+      speed: 30,
+      turningRadius: 10,
+      weaponRanges: { "missile": 150, "machine-gun": 30 },
+      damageValues: { "missile": 60, "machine-gun": 15 },
+      ammunition: { "missile": 6, "machine-gun": 500 },
+      detectionRanges: {
+        radar: 250,
+        sonar: 0,
+        visual: 100
+      },
+      health: 80,
+      maxHealth: 100,
+      status: ["detected"]
+    }
+  ];
 
   // Add a friendly sea surface unit on mount
   useEffect(() => {
@@ -65,7 +110,7 @@ const CommandCenterContent: React.FC = () => {
         {/* Map area */}
         <div className="flex-grow h-[calc(100vh-8rem)] overflow-hidden rounded-lg shadow-xl animate-fade-in">
           <GridMapComponent width={800} height={600} />
-          {/* We don't render GameUnits here directly as it's now part of the grid map */}
+          <GameUnits units={sampleUnits} />
         </div>
 
         {/* Sidebar */}
