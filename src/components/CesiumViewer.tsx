@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from "react";
 import * as Cesium from "cesium";
 import "cesium/Build/Cesium/Widgets/widgets.css";
@@ -45,86 +46,95 @@ const CesiumViewer: React.FC<CesiumViewerProps> = ({
       
       // Configure the viewer with different settings based on whether it's used in map or standalone
       const isFullMapView = className === "h-full";
-      const viewer = new Cesium.Viewer(cesiumContainer.current, {
-        terrainProvider: Cesium.createWorldTerrain(),
-        animation: false,
-        baseLayerPicker: !isFullMapView, // Hide controls in map view
-        fullscreenButton: false,
-        geocoder: !isFullMapView,
-        homeButton: !isFullMapView,
-        infoBox: !isFullMapView,
-        sceneModePicker: !isFullMapView,
-        selectionIndicator: !isFullMapView,
-        timeline: false,
-        navigationHelpButton: false,
-        navigationInstructionsInitiallyVisible: false,
-    });
-    
-    // Remove Cesium credits
-    viewer.cesiumWidget.creditContainer.style.display = "none";
-    
-    // Fly to the default location
-    viewer.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(
-        defaultLocation.longitude,
-        defaultLocation.latitude,
-        defaultLocation.height || 1000
-      ),
-      orientation: {
-        heading: 0.0,
-        pitch: -Math.PI / 4,
-        roll: 0.0,
-      },
-      complete: function() {
-        // Force 2D mode after the camera is positioned if in map view
-        if (isFullMapView) {
-          viewer.scene.mode = Cesium.SceneMode.SCENE2D;
-          console.log("Camera positioned and 2D mode set for map view");
+      
+      // Use createWorldTerrainAsync instead of createWorldTerrain
+      Cesium.createWorldTerrainAsync().then(terrainProvider => {
+        const viewer = new Cesium.Viewer(cesiumContainer.current as HTMLDivElement, {
+          terrainProvider: terrainProvider,
+          animation: false,
+          baseLayerPicker: !isFullMapView, // Hide controls in map view
+          fullscreenButton: false,
+          geocoder: !isFullMapView,
+          homeButton: !isFullMapView,
+          infoBox: !isFullMapView,
+          sceneModePicker: !isFullMapView,
+          selectionIndicator: !isFullMapView,
+          timeline: false,
+          navigationHelpButton: false,
+          navigationInstructionsInitiallyVisible: false,
+        });
+        
+        // Fix the creditContainer style access
+        const creditContainer = viewer.cesiumWidget.creditContainer as HTMLElement;
+        if (creditContainer) {
+          creditContainer.style.display = "none";
         }
-      }
-    });
-    
-    // Save viewer reference for cleanup
-    viewerRef.current = viewer;
-    
-    // Only add sample data if not in map view mode
-    if (!isFullMapView) {
-      // Add some sample data - Create a point
-      viewer.entities.add({
-        position: Cesium.Cartesian3.fromDegrees(
-          defaultLocation.longitude, 
-          defaultLocation.latitude
-        ),
-        point: {
-          pixelSize: 10,
-          color: Cesium.Color.RED,
-        },
-        label: {
-          text: 'Starting Location',
-          font: '14pt sans-serif',
-          style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-          outlineWidth: 2,
-          verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-          pixelOffset: new Cesium.Cartesian2(0, -9),
+        
+        // Fly to the default location
+        viewer.camera.flyTo({
+          destination: Cesium.Cartesian3.fromDegrees(
+            defaultLocation.longitude,
+            defaultLocation.latitude,
+            defaultLocation.height || 1000
+          ),
+          orientation: {
+            heading: 0.0,
+            pitch: -Math.PI / 4,
+            roll: 0.0,
+          },
+          complete: function() {
+            // Force 2D mode after the camera is positioned if in map view
+            if (isFullMapView) {
+              viewer.scene.mode = Cesium.SceneMode.SCENE2D;
+              console.log("Camera positioned and 2D mode set for map view");
+            }
+          }
+        });
+        
+        // Save viewer reference for cleanup
+        viewerRef.current = viewer;
+        
+        // Only add sample data if not in map view mode
+        if (!isFullMapView) {
+          // Add some sample data - Create a point
+          viewer.entities.add({
+            position: Cesium.Cartesian3.fromDegrees(
+              defaultLocation.longitude, 
+              defaultLocation.latitude
+            ),
+            point: {
+              pixelSize: 10,
+              color: Cesium.Color.RED,
+            },
+            label: {
+              text: 'Starting Location',
+              font: '14pt sans-serif',
+              style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+              outlineWidth: 2,
+              verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+              pixelOffset: new Cesium.Cartesian2(0, -9),
+            }
+          });
         }
+      }).catch(error => {
+        console.error("Error loading terrain:", error);
       });
-    }
-    
-    // Clean up on unmount
-    return () => {
-      if (viewerRef.current) {
-        try {
-          viewerRef.current.destroy();
-          viewerRef.current = null;
-        } catch (error) {
-          console.error("Error destroying Cesium viewer:", error);
+      
+      // Clean up on unmount
+      return () => {
+        if (viewerRef.current) {
+          try {
+            viewerRef.current.destroy();
+            viewerRef.current = null;
+          } catch (error) {
+            console.error("Error destroying Cesium viewer:", error);
+          }
         }
-      }
-    };
+      };
     } catch (error) {
       console.error("Error initializing Cesium:", error);
     }
-  }, [defaultLocation]);
+  }, [defaultLocation, className]);
   
   // Handle view mode changes
   useEffect(() => {
