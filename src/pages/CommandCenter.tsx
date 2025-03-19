@@ -4,6 +4,8 @@ import { GameProvider, useGame } from "@/context/GameContext";
 import GridMapComponent from "@/components/GridMapComponent";
 import Sidebar from "@/components/Sidebar";
 import { toast } from "sonner";
+import { UnitProvider } from "@/context/UnitContext";
+import GameUnits from "@/components/GameUnits";
 
 // Inner component to access context
 const CommandCenterContent: React.FC = () => {
@@ -63,6 +65,7 @@ const CommandCenterContent: React.FC = () => {
         {/* Map area */}
         <div className="flex-grow h-[calc(100vh-8rem)] overflow-hidden rounded-lg shadow-xl animate-fade-in">
           <GridMapComponent width={800} height={600} />
+          {/* We don't render GameUnits here directly as it's now part of the grid map */}
         </div>
 
         {/* Sidebar */}
@@ -77,7 +80,9 @@ const CommandCenterContent: React.FC = () => {
 const CommandCenter: React.FC = () => {
   return (
     <GameProvider>
-      <CommandCenterContent />
+      <UnitProvider>
+        <CommandCenterContent />
+      </UnitProvider>
     </GameProvider>
   );
 };

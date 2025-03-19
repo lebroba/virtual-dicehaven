@@ -4,6 +4,8 @@ import { useMapGridSystem } from "@/hooks/useMapGridSystem";
 import { MapConfig, GridCellData } from "@/types/MapGridSystem";
 import { useGame } from "@/context/GameContext";
 import TokenLayer from "./TokenLayer";
+import GameUnits from "./GameUnits";
+import { useUnitContext } from "@/context/UnitContext";
 import { toast } from "sonner";
 
 interface GridMapComponentProps {
@@ -14,6 +16,7 @@ interface GridMapComponentProps {
 const GridMapComponent: React.FC<GridMapComponentProps> = ({ width, height }) => {
   const mapGridSystem = useMapGridSystem();
   const { gridSize, gridType } = useGame();
+  const { units } = useUnitContext();
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [gridCells, setGridCells] = useState<GridCellData[]>([]);
@@ -208,6 +211,9 @@ const GridMapComponent: React.FC<GridMapComponentProps> = ({ width, height }) =>
 
       {/* Token layer */}
       <TokenLayer />
+      
+      {/* Unit layer - render the game units */}
+      {units.length > 0 && <GameUnits units={units} />}
       
       {/* Show grid coordinates for debugging */}
       <div className="absolute top-4 left-4 glass-panel px-3 py-1 rounded-lg text-sm">
