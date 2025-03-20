@@ -1,7 +1,15 @@
 
 import React from "react";
 import { useGame } from "@/context/GameContext";
-import { MilitarySymbol } from "@/components/MilitarySymbol";
+import { Tooltip } from "@/components/ui/tooltip";
+
+// Sample token images
+const tokenImages = [
+  "https://images.unsplash.com/photo-1594736797933-d0501ba2fe65?w=200&h=200&fit=crop",
+  "https://images.unsplash.com/photo-1613987549117-13c4783dfc30?w=200&h=200&fit=crop",
+  "https://images.unsplash.com/photo-1577493340887-b7bfff550145?w=200&h=200&fit=crop",
+  "https://images.unsplash.com/photo-1653167834535-82910de1681e?w=200&h=200&fit=crop",
+];
 
 const TokenLayer: React.FC = () => {
   const { 
@@ -12,6 +20,24 @@ const TokenLayer: React.FC = () => {
     setSelectedTokenId,
     gridSize 
   } = useGame();
+
+  // Add a new token at a random position
+  const handleAddToken = () => {
+    const id = `token-${Date.now()}`;
+    const randomImage = tokenImages[Math.floor(Math.random() * tokenImages.length)];
+    
+    addToken({
+      id,
+      name: `Token ${tokens.length + 1}`,
+      image: randomImage,
+      x: Math.random() * 800,
+      y: Math.random() * 600,
+      size: gridSize,
+      controlledBy: "player",
+      visible: true,
+      conditions: [],
+    });
+  };
 
   // Handle token drag
   const handleDragStart = (e: React.DragEvent, tokenId: string) => {
@@ -26,6 +52,8 @@ const TokenLayer: React.FC = () => {
     if (!tokenId) return;
     
     // Calculate the position based on the drop location
+    // This is a simplified approach - in a real app, you'd 
+    // calculate this relative to the map container
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -54,32 +82,34 @@ const TokenLayer: React.FC = () => {
           draggable
           onDragStart={(e) => handleDragStart(e, token.id)}
           onClick={() => setSelectedTokenId(token.id)}
-          className={`absolute token overflow-hidden cursor-move ${
-            selectedTokenId === token.id ? "ring-2 ring-white ring-opacity-70" : ""
+          className={`absolute token rounded-full overflow-hidden ${
+            selectedTokenId === token.id ? "ring-2 ring-primary animate-ping-slow" : ""
           }`}
           style={{
             left: token.x,
             top: token.y,
             width: token.size,
-            height: token.size
+            height: token.size,
+            zIndex: selectedTokenId === token.id ? 10 : 1,
           }}
         >
-          {token.symbolType ? (
-            <MilitarySymbol 
-              identity={token.symbolType.identity}
-              domain={token.symbolType.domain}
-              size={token.size}
-              selected={false} // Don't show selection effects
-            />
-          ) : (
-            <img 
-              src={token.image} 
-              alt={token.name}
-              className="w-full h-full object-cover rounded-full"
-            />
-          )}
+          <img 
+            src={token.image} 
+            alt={token.name}
+            className="w-full h-full object-cover"
+          />
         </div>
       ))}
+      
+      {/* Token controls */}
+      <div className="absolute top-4 right-4 glass-panel p-2 rounded-lg">
+        <button 
+          onClick={handleAddToken}
+          className="flex items-center justify-center bg-accent text-accent-foreground px-3 py-1 rounded hover:bg-accent/80 transition-colors text-sm"
+        >
+          Add Token
+        </button>
+      </div>
     </div>
   );
 };
