@@ -16,11 +16,11 @@ const PixiRenderer: React.FC<PixiRendererProps> = ({ width, height, className })
   useEffect(() => {
     if (!pixiContainer.current) return;
 
-    // Create the PIXI application
+    // Create the PIXI application with transparency
     const pixiApp = new PIXI.Application({
       width,
       height,
-      backgroundColor: 0x000000,
+      backgroundAlpha: 0, // Make background transparent
       antialias: true,
       resolution: window.devicePixelRatio || 1,
       autoDensity: true,
@@ -30,8 +30,19 @@ const PixiRenderer: React.FC<PixiRendererProps> = ({ width, height, className })
     pixiContainer.current.appendChild(pixiApp.view as HTMLCanvasElement);
     setApp(pixiApp);
 
+    // Make the canvas responsive to parent container
+    const onResize = () => {
+      if (!pixiContainer.current) return;
+      const parent = pixiContainer.current;
+      pixiApp.renderer.resize(parent.clientWidth, parent.clientHeight);
+    };
+
+    window.addEventListener('resize', onResize);
+    onResize(); // Initial sizing
+
     // Cleanup function
     return () => {
+      window.removeEventListener('resize', onResize);
       pixiApp.destroy(true, { children: true, texture: true, baseTexture: true });
       setApp(null);
     };

@@ -37,34 +37,25 @@ const CommandCenter: React.FC = () => {
 
         {/* Main content */}
         <main className="flex-1 flex overflow-hidden p-4 gap-4">
-          {/* New library demo container */}
-          <div className="flex-grow h-[calc(100vh-8rem)] overflow-hidden rounded-lg shadow-xl animate-fade-in grid grid-cols-2 grid-rows-2 gap-4">
-            {/* Original Map */}
-            <div className="rounded-lg overflow-hidden shadow-lg">
-              <h3 className="glass-panel p-2 text-sm font-semibold">Game Map</h3>
-              <div className="h-[calc(100%-2rem)]">
-                <Map />
-              </div>
+          {/* Main visualization container */}
+          <div className="flex-grow h-[calc(100vh-8rem)] overflow-hidden rounded-lg shadow-xl animate-fade-in relative">
+            {/* Layer 1: OpenLayers Map (Bottom) */}
+            <div className="absolute inset-0 z-10">
+              <OpenLayersMap
+                center={[30.5, 45.8]} 
+                zoom={3}
+                className="w-full h-full"
+              />
             </div>
             
-            {/* PixiJS Renderer */}
-            <div className="rounded-lg overflow-hidden shadow-lg">
-              <h3 className="glass-panel p-2 text-sm font-semibold">Missile Trajectories (PixiJS)</h3>
-              <div className="h-[calc(100%-2rem)] bg-gray-900">
-                <PixiRenderer width={500} height={300} className="w-full h-full" />
-              </div>
+            {/* Layer 2: Tactical Grid Map (Middle) */}
+            <div className="absolute inset-0 z-20">
+              <Map />
             </div>
             
-            {/* OpenLayers Map */}
-            <div className="rounded-lg overflow-hidden shadow-lg col-span-2">
-              <h3 className="glass-panel p-2 text-sm font-semibold">Geographic View (OpenLayers)</h3>
-              <div className="h-[calc(100%-2rem)]">
-                <OpenLayersMap
-                  center={[30.5, 45.8]} 
-                  zoom={3}
-                  className="w-full h-full"
-                />
-              </div>
+            {/* Layer 3: PixiJS Renderer (Top) */}
+            <div className="absolute inset-0 z-30 pointer-events-none">
+              <PixiRenderer width={1000} height={800} className="w-full h-full" />
             </div>
           </div>
 

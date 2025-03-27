@@ -30,7 +30,11 @@ const OpenLayersMap: React.FC<OpenLayersMapProps> = ({
       target: mapRef.current,
       layers: [
         new TileLayer({
-          source: new OSM(),
+          source: new OSM({
+            // Use a darker map style to make tactical layer more visible
+            url: 'https://{a-c}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png'
+          }),
+          opacity: 0.7, // Reduce opacity to better work as a background
         }),
       ],
       view: new View({
@@ -43,8 +47,18 @@ const OpenLayersMap: React.FC<OpenLayersMapProps> = ({
 
     setMap(olMap);
 
+    // Ensure map resizes with container
+    const handleResize = () => {
+      setTimeout(() => {
+        olMap.updateSize();
+      }, 200);
+    };
+
+    window.addEventListener('resize', handleResize);
+
     // Cleanup function
     return () => {
+      window.removeEventListener('resize', handleResize);
       olMap.setTarget(undefined);
       setMap(null);
     };
