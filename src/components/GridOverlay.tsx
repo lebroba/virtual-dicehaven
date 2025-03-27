@@ -45,7 +45,7 @@ const GridOverlay: React.FC<GridOverlayProps> = ({ width, height, gridSize, grid
 
     return (
       <svg
-        className="absolute inset-0 pointer-events-none"
+        className="absolute inset-0 pointer-events-none bg-transparent"
         width={width}
         height={height}
         xmlns="http://www.w3.org/2000/svg"
@@ -93,7 +93,7 @@ const GridOverlay: React.FC<GridOverlayProps> = ({ width, height, gridSize, grid
 
     return (
       <svg
-        className="absolute inset-0 pointer-events-none"
+        className="absolute inset-0 pointer-events-none bg-transparent"
         width={width}
         height={height}
         xmlns="http://www.w3.org/2000/svg"
