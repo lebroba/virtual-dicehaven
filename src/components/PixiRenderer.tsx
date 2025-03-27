@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import * as PIXI from 'pixi.js';
 
@@ -16,21 +15,27 @@ const PixiRenderer: React.FC<PixiRendererProps> = ({ width, height, className })
   useEffect(() => {
     if (!pixiContainer.current) return;
 
-    // Create the PIXI application with transparency
+    // Create PIXI application with explicit transparency
     const pixiApp = new PIXI.Application({
       width,
       height,
-      backgroundAlpha: 0, // Make background transparent
+      backgroundAlpha: 0, // Modern PixiJS (v7+)
+      transparent: true, // Fallback for older versions
       antialias: true,
       resolution: window.devicePixelRatio || 1,
       autoDensity: true,
+      clearBeforeRender: false, // Prevent unnecessary background clearing
     });
 
+    // Ensure the canvas itself has no background
+    const canvas = pixiApp.view as HTMLCanvasElement;
+    canvas.style.background = 'transparent';
+
     // Add the canvas to the DOM
-    pixiContainer.current.appendChild(pixiApp.view as HTMLCanvasElement);
+    pixiContainer.current.appendChild(canvas);
     setApp(pixiApp);
 
-    // Make the canvas responsive to parent container
+    // Make the canvas responsive
     const onResize = () => {
       if (!pixiContainer.current) return;
       const parent = pixiContainer.current;
@@ -40,7 +45,7 @@ const PixiRenderer: React.FC<PixiRendererProps> = ({ width, height, className })
     window.addEventListener('resize', onResize);
     onResize(); // Initial sizing
 
-    // Cleanup function
+    // Cleanup
     return () => {
       window.removeEventListener('resize', onResize);
       pixiApp.destroy(true, { children: true, texture: true, baseTexture: true });
@@ -48,36 +53,31 @@ const PixiRenderer: React.FC<PixiRendererProps> = ({ width, height, className })
     };
   }, [width, height]);
 
-  // Add a sample missile path animation
+  // Add missile path animation
   useEffect(() => {
     if (!app) return;
 
-    // Create a container for missile paths
     const missilePathsContainer = new PIXI.Container();
     app.stage.addChild(missilePathsContainer);
 
-    // Sample missile path
     const drawMissilePath = () => {
       const graphics = new PIXI.Graphics();
       graphics.lineStyle(2, 0xff0000, 1);
       graphics.moveTo(100, height - 50);
-      
-      // Draw a parabolic arc
+
       const controlPointX = width / 2;
       const controlPointY = 50;
       const endX = width - 100;
       const endY = height - 150;
-      
-      // Create a curved line representing a missile path
+
       for (let t = 0; t <= 1; t += 0.01) {
         const x = (1 - t) * (1 - t) * 100 + 2 * (1 - t) * t * controlPointX + t * t * endX;
         const y = (1 - t) * (1 - t) * (height - 50) + 2 * (1 - t) * t * controlPointY + t * t * endY;
         graphics.lineTo(x, y);
       }
-      
+
       missilePathsContainer.addChild(graphics);
-      
-      // Add a missile (red circle) that follows the path
+
       const missile = new PIXI.Graphics();
       missile.beginFill(0xff0000);
       missile.drawCircle(0, 0, 5);
@@ -85,8 +85,7 @@ const PixiRenderer: React.FC<PixiRendererProps> = ({ width, height, className })
       missile.x = 100;
       missile.y = height - 50;
       missilePathsContainer.addChild(missile);
-      
-      // Animate the missile along the path
+
       let progress = 0;
       const animateMissile = () => {
         progress += 0.005;
@@ -95,28 +94,27 @@ const PixiRenderer: React.FC<PixiRendererProps> = ({ width, height, className })
           missile.x = 100;
           missile.y = height - 50;
         } else {
-          missile.x = (1 - progress) * (1 - progress) * 100 + 
-                      2 * (1 - progress) * progress * controlPointX + 
+          missile.x = (1 - progress) * (1 - progress) * 100 +
+                      2 * (1 - progress) * progress * controlPointX +
                       progress * progress * endX;
-          missile.y = (1 - progress) * (1 - progress) * (height - 50) + 
-                      2 * (1 - progress) * progress * controlPointY + 
+          missile.y = (1 - progress) * (1 - progress) * (height - 50) +
+                      2 * (1 - progress) * progress * controlPointY +
                       progress * progress * endY;
         }
       };
-      
+
       app.ticker.add(animateMissile);
     };
 
     drawMissilePath();
 
-    // Cleanup
     return () => {
       app.stage.removeChild(missilePathsContainer);
       missilePathsContainer.destroy({ children: true });
     };
   }, [app, height, width]);
 
-  return <div ref={pixiContainer} className={className} />;
+  return <div ref={pixiContainer} className={`${className} bg-transparent`} style={{ background: 'transparent' }} />;
 };
 
 export default PixiRenderer;
