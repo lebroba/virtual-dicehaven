@@ -27,7 +27,7 @@ const GridOverlay: React.FC<GridOverlayProps> = ({ width, height, gridSize, grid
         y1={i * gridSize}
         x2={width}
         y2={i * gridSize}
-        className="stroke-primary/20 stroke-[1px]"
+        className="stroke-[#0A5C8C] stroke-[1px]"
       />
     ));
 
@@ -39,7 +39,7 @@ const GridOverlay: React.FC<GridOverlayProps> = ({ width, height, gridSize, grid
         y1="0"
         x2={i * gridSize}
         y2={height}
-        className="stroke-primary/20 stroke-[1px]"
+        className="stroke-[#0A5C8C] stroke-[1px]"
       />
     ));
 
@@ -85,7 +85,7 @@ const GridOverlay: React.FC<GridOverlayProps> = ({ width, height, gridSize, grid
           <polygon
             key={`hex-${row}-${col}`}
             points={points}
-            className="fill-none stroke-primary/20 stroke-[1px]"
+            className="fill-none stroke-[#0A5C8C] stroke-[1px]"
           />
         );
       }
