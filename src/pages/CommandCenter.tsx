@@ -44,7 +44,7 @@ const CommandCenter: React.FC = () => {
         </header>
 
         <main className="flex-1 flex overflow-hidden p-4 gap-4">
-          <div className="flex-grow h-[calc(100vh-8rem)] overflow-hidden rounded-lg shadow-xl animate-fade-in relative bg-pink">
+          <div className="flex-grow h-[calc(100vh-8rem)] overflow-hidden rounded-lg shadow-xl animate-fade-in relative bg-transparent">
             <div className="absolute inset-0 z-10">
               <OpenLayersMap
                 center={mapCenter}

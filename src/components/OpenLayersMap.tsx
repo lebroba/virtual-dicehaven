@@ -36,7 +36,7 @@ const OpenLayersMap: React.FC<OpenLayersMapProps> = ({
             // Use a darker map style to make tactical layer more visible
             url: 'https://{a-c}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png'
           }),
-          opacity: 0.7, // Reduce opacity to better work as a background
+          opacity: 1.0, // Reduce opacity to better work as a background
         }),
       ],
       view: new View({
