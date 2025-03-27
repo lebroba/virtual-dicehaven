@@ -50,8 +50,10 @@ const GridOverlay: React.FC<GridOverlayProps> = ({ width, height, gridSize, grid
         height={height}
         xmlns="http://www.w3.org/2000/svg"
       >
-        {horizontalLines}
-        {verticalLines}
+        <g className="fill-transparent">
+          {horizontalLines}
+          {verticalLines}
+        </g>
       </svg>
     );
   }
@@ -85,7 +87,7 @@ const GridOverlay: React.FC<GridOverlayProps> = ({ width, height, gridSize, grid
           <polygon
             key={`hex-${row}-${col}`}
             points={points}
-            className="fill-none stroke-[#0A5C8C] stroke-[1px]"
+            className="fill-transparent stroke-[#0A5C8C] stroke-[1px]"
           />
         );
       }
