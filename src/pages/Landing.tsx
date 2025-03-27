@@ -112,7 +112,7 @@ const Landing = () => {
             
             <motion.div 
               variants={itemVariants} 
-              className="glass-panel p-4 md:p-6 mb-8 border border-primary/20 rounded-lg"
+              className="glass-panel p-4 md:p-6 mb-8 border border-primary/20 rounded-lg overflow-hidden"
             >
               <TerminalText delay={1800} className="text-sm md:text-base font-mono text-primary/90" />
             </motion.div>
