@@ -16,16 +16,14 @@ const PixiRenderer: React.FC<PixiRendererProps> = ({ width, height, className })
     if (!pixiContainer.current) return;
 
     // Create PIXI application with explicit transparency
-    const pixiApp = new PIXI.Application({
-      width,
-      height,
-      backgroundAlpha: 0, // Modern PixiJS (v7+)
-      transparent: true, // Fallback for older versions
-      antialias: true,
-      resolution: window.devicePixelRatio || 1,
-      autoDensity: true,
-      clearBeforeRender: false, // Prevent unnecessary background clearing
-    });
+const pixiApp = new PIXI.Application({
+  width,
+  height,
+  backgroundAlpha: 0, // Make background transparent
+  antialias: true,
+  resolution: window.devicePixelRatio || 1,
+  autoDensity: true,
+});
 
     // Ensure the canvas itself has no background
     const canvas = pixiApp.view as HTMLCanvasElement;
