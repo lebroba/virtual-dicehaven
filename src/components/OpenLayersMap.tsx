@@ -36,7 +36,7 @@ const OpenLayersMap: React.FC<OpenLayersMapProps> = ({
             // Use a darker map style to make tactical layer more visible
             url: 'https://{a-c}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png'
           }),
-          opacity: 1.0, // Reduce opacity to better work as a background
+          opacity: 1.0, // Full opacity to ensure visibility
         }),
       ],
       view: new View({
@@ -79,7 +79,7 @@ const OpenLayersMap: React.FC<OpenLayersMapProps> = ({
     map.getView().setZoom(zoom);
   }, [map, center, zoom]);
 
-  return <div ref={mapRef} className={className} style={{ width: '100%', height: '100%' }} />;
+  return <div ref={mapRef} className={`${className} z-10`} style={{ width: '100%', height: '100%' }} />;
 };
 
 export default OpenLayersMap;
