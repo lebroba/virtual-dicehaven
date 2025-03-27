@@ -11,12 +11,14 @@ interface OpenLayersMapProps {
   center?: [number, number]; // [longitude, latitude]
   zoom?: number;
   className?: string;
+  onMapReady?: (map: Map) => void;
 }
 
 const OpenLayersMap: React.FC<OpenLayersMapProps> = ({
   center = [0, 0],
   zoom = 2,
   className,
+  onMapReady,
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<Map | null>(null);
@@ -46,6 +48,11 @@ const OpenLayersMap: React.FC<OpenLayersMapProps> = ({
     });
 
     setMap(olMap);
+    
+    // Call onMapReady callback with the created map
+    if (onMapReady) {
+      onMapReady(olMap);
+    }
 
     // Ensure map resizes with container
     const handleResize = () => {
@@ -62,7 +69,7 @@ const OpenLayersMap: React.FC<OpenLayersMapProps> = ({
       olMap.setTarget(undefined);
       setMap(null);
     };
-  }, []);
+  }, [onMapReady]);
 
   // Update map view when props change
   useEffect(() => {

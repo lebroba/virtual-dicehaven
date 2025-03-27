@@ -5,7 +5,20 @@ import TokenLayer from "./TokenLayer";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Layers, Hand, PenTool, Ruler, Dice1, Settings, MousePointer, PaintBucket } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
-const Map: React.FC = () => {
+import { type Map as OLMap } from 'ol';
+import { fromLonLat } from 'ol/proj';
+
+interface MapProps {
+  disableMapZoom?: boolean;
+  olMap?: OLMap | null;
+  onZoomChange?: (zoom: number) => void;
+}
+
+const Map: React.FC<MapProps> = ({ 
+  disableMapZoom = false, 
+  olMap = null,
+  onZoomChange
+}) => {
   const {
     gridType,
     gridSize,
@@ -17,11 +30,14 @@ const Map: React.FC = () => {
     width: 1000,
     height: 800
   });
+  
+  // We'll use a local scale for the grid overlay only, no position state needed
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({
     x: 0,
     y: 0
   });
+  
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({
     x: 0,
@@ -32,7 +48,11 @@ const Map: React.FC = () => {
 
   // Sample background images to choose from (in a real app, these would be user-provided)
   const sampleBackgrounds = ["/placeholder.svg", "https://images.unsplash.com/photo-1585202900225-6d3ac20a6962?q=80&w=1000&auto=format&fit=crop", "https://images.unsplash.com/photo-1519074069444-1ba4fff66d16?q=80&w=1000&auto=format&fit=crop"];
+  
   const handleMouseDown = (e: React.MouseEvent) => {
+    // If map zooming is disabled, don't handle dragging
+    if (disableMapZoom) return;
+    
     // Only allow dragging the map with the middle mouse button or space+click
     if (e.button === 1 || e.button === 0 && e.shiftKey) {
       setIsDragging(true);
@@ -42,8 +62,9 @@ const Map: React.FC = () => {
       });
     }
   };
+  
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (isDragging) {
+    if (isDragging && !disableMapZoom) {
       const deltaX = e.clientX - dragStart.x;
       const deltaY = e.clientY - dragStart.y;
       setPosition({
@@ -56,15 +77,21 @@ const Map: React.FC = () => {
       });
     }
   };
+  
   const handleMouseUp = () => {
     setIsDragging(false);
   };
+  
   const handleWheel = (e: React.WheelEvent) => {
+    // If map zooming is disabled, don't process wheel events
+    if (disableMapZoom) return;
+    
     e.preventDefault();
     const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
     const newScale = Math.min(Math.max(scale * zoomFactor, 0.5), 3);
     setScale(newScale);
   };
+  
   const handleChangeBackground = () => {
     const currentIndex = sampleBackgrounds.indexOf(backgroundImage);
     const nextIndex = (currentIndex + 1) % sampleBackgrounds.length;
@@ -91,42 +118,61 @@ const Map: React.FC = () => {
     }
   }, []);
 
-  // Handle zoom in control
+  // Handle zoom in control - now controls OpenLayers map
   const handleZoomIn = () => {
-    const newScale = Math.min(scale * 1.2, 3);
-    setScale(newScale);
+    if (olMap && onZoomChange) {
+      const currentZoom = olMap.getView().getZoom() || 3;
+      const newZoom = Math.min(currentZoom + 1, 19);
+      onZoomChange(newZoom);
+    }
   };
 
-  // Handle zoom out control
+  // Handle zoom out control - now controls OpenLayers map
   const handleZoomOut = () => {
-    const newScale = Math.max(scale * 0.8, 0.5);
-    setScale(newScale);
+    if (olMap && onZoomChange) {
+      const currentZoom = olMap.getView().getZoom() || 3;
+      const newZoom = Math.max(currentZoom - 1, 0);
+      onZoomChange(newZoom);
+    }
   };
 
-  // Handle zoom slider change
+  // Handle zoom slider change - now controls OpenLayers map
   const handleZoomSliderChange = (value: number[]) => {
-    const newScale = value[0];
-    setScale(newScale);
+    if (olMap && onZoomChange) {
+      const newZoom = sliderValueToZoom(value[0]);
+      onZoomChange(newZoom);
+    }
   };
 
-  // Calculate the slider value from scale
-  // Scale range is 0.5 to 3, map to 0-100 for the slider
-  const scaleToSliderValue = (scaleValue: number) => {
-    return (scaleValue - 0.5) / 2.5 * 100;
+  // Get current OpenLayers map zoom level
+  const getCurrentMapZoom = () => {
+    if (olMap) {
+      return olMap.getView().getZoom() || 3;
+    }
+    return 3; // Default zoom
   };
 
-  // Calculate the scale from slider value
-  // Slider range is 0-100, map to 0.5-3 for the scale
-  const sliderValueToScale = (sliderValue: number) => {
-    return 0.5 + sliderValue / 100 * 2.5;
+  // Calculate the slider value from OpenLayers zoom
+  // OpenLayers zoom is typically 0-19, map to 0-100 for the slider
+  const zoomToSliderValue = (zoomValue: number) => {
+    return (zoomValue / 19) * 100;
   };
 
-  // Handle center view
+  // Calculate the OpenLayers zoom from slider value
+  // Slider range is 0-100, map to 0-19 for OpenLayers zoom
+  const sliderValueToZoom = (sliderValue: number) => {
+    return (sliderValue / 100) * 19;
+  };
+
+  // Handle center view - now centers the OpenLayers map
   const handleCenterView = () => {
-    setPosition({
-      x: 0,
-      y: 0
-    });
+    if (olMap) {
+      olMap.getView().setCenter(fromLonLat([30.5, 45.8])); // Reset to default center
+      olMap.getView().setZoom(3); // Reset to default zoom
+      if (onZoomChange) {
+        onZoomChange(3);
+      }
+    }
   };
 
   // Find and center on the selected token
@@ -139,16 +185,27 @@ const Map: React.FC = () => {
     const containerWidth = containerRef.current.clientWidth;
     const containerHeight = containerRef.current.clientHeight;
 
-    // Calculate the position to center the token
-    const newX = containerWidth / 2 - selectedToken.x;
-    const newY = containerHeight / 2 - selectedToken.y;
-
-    // Set the new position and zoom in slightly
-    setPosition({
-      x: newX,
-      y: newY
-    });
-    setScale(Math.min(scale * 1.3, 2));
+    // Set the OpenLayers map to center on the token
+    if (olMap) {
+      // This is a simplified approach - in a real app, you would
+      // convert token coordinates to map coordinates
+      const x = selectedToken.x / containerWidth;
+      const y = selectedToken.y / containerHeight;
+      
+      // Since we don't have proper geo-coordinates for tokens, 
+      // this is just to demonstrate the concept
+      const currentCenter = olMap.getView().getCenter() || [0, 0];
+      olMap.getView().setCenter(currentCenter);
+      
+      // Zoom in slightly
+      const currentZoom = olMap.getView().getZoom() || 3;
+      const newZoom = Math.min(currentZoom + 1, 19);
+      olMap.getView().setZoom(newZoom);
+      
+      if (onZoomChange) {
+        onZoomChange(newZoom);
+      }
+    }
   };
 
   // Change the selected tool
@@ -211,22 +268,17 @@ const Map: React.FC = () => {
       tooltip: 'Settings'
     }]
   }];
+
+  // Get the current zoom level to display
+  const currentMapZoom = olMap ? Math.round((olMap.getView().getZoom() || 3) * 10) / 10 : 3;
+  
   return <div ref={containerRef} className="relative w-full h-full overflow-hidden bg-transparent rounded-lg" onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} onWheel={handleWheel}>
-      <div style={{
-      transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
-      transformOrigin: "center",
-      width: dimensions.width,
-      height: dimensions.height
-    }} className="absolute transition-transform duration-100 bg-transparent">
-        {/* Background image layer */}
-        <div className="absolute inset-0 bg-cover bg-center" style={{
-        backgroundImage: `url(${backgroundImage})`
-      }} />
-        
-        {/* Grid overlay */}
+      {/* We no longer transform the entire container, only the grid overlay */}
+      <div className="absolute inset-0 pointer-events-none bg-transparent">
+        {/* Grid overlay - static, doesn't move with map zooming */}
         <GridOverlay width={dimensions.width} height={dimensions.height} gridSize={gridSize} gridType={gridType} />
         
-        {/* Token layer */}
+        {/* Token layer - static in relation to the map */}
         <TokenLayer />
       </div>
 
@@ -256,25 +308,32 @@ const Map: React.FC = () => {
         </div>
       </div>
 
-      {/* Roll20-style Zoom Control Panel */}
+      {/* Roll20-style Zoom Control Panel - now controls OpenLayers map */}
       <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-center">
         <div className="glass-panel rounded-lg flex flex-col items-center overflow-hidden">
-          {/* Zoom percentage display */}
+          {/* Zoom percentage display - now shows OpenLayers zoom */}
           <div className="bg-secondary/80 w-10 h-10 flex items-center justify-center text-sm font-medium border-b border-white/10">
-            {Math.round(scale * 100)}
+            {olMap ? currentMapZoom : 3}
           </div>
           
-          {/* Zoom in button */}
+          {/* Zoom in button - now zooms OpenLayers map */}
           <button onClick={handleZoomIn} className="w-10 h-10 flex items-center justify-center hover:bg-primary/20 transition-colors" aria-label="Zoom in">
             +
           </button>
           
-          {/* Interactive Zoom slider */}
+          {/* Interactive Zoom slider - now controls OpenLayers map zoom */}
           <div className="py-3 px-4 h-20 flex items-center">
-            <Slider orientation="vertical" value={[scaleToSliderValue(scale)]} onValueChange={handleZoomSliderChange} max={100} step={1} className="h-16 w-5" onValueCommit={val => setScale(sliderValueToScale(val[0]))} />
+            <Slider 
+              orientation="vertical" 
+              value={[zoomToSliderValue(currentMapZoom)]} 
+              onValueChange={handleZoomSliderChange} 
+              max={100} 
+              step={1} 
+              className="h-16 w-5" 
+            />
           </div>
           
-          {/* Zoom out button */}
+          {/* Zoom out button - now zooms OpenLayers map */}
           <button onClick={handleZoomOut} className="w-10 h-10 flex items-center justify-center hover:bg-primary/20 transition-colors" aria-label="Zoom out">
             -
           </button>
@@ -298,8 +357,9 @@ const Map: React.FC = () => {
       {/* Map info and status */}
       <div className="absolute top-4 left-4 glass-panel px-3 py-1 rounded-lg text-sm">
         <div className="font-semibold">Battle Map</div>
-        <div className="text-xs text-muted-foreground">Scale: {Math.round(scale * 100)}%</div>
+        <div className="text-xs text-muted-foreground">Zoom: {currentMapZoom}x</div>
       </div>
     </div>;
 };
+
 export default Map;

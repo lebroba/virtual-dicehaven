@@ -1,12 +1,38 @@
-
-import React from "react";
+import React, { useState, useRef } from "react";
 import { GameProvider } from "@/context/GameContext";
 import Map from "@/components/Map";
 import Sidebar from "@/components/Sidebar";
 import PixiRenderer from "@/components/PixiRenderer";
 import OpenLayersMap from "@/components/OpenLayersMap";
+import { type Map as OLMap } from 'ol';
+import { fromLonLat } from 'ol/proj';
 
 const CommandCenter: React.FC = () => {
+  const [olMap, setOLMap] = useState<OLMap | null>(null);
+  const [mapCenter, setMapCenter] = useState<[number, number]>([30.5, 45.8]);
+  const [mapZoom, setMapZoom] = useState<number>(3);
+
+  const handleMapReady = (map: OLMap) => {
+    setOLMap(map);
+  };
+
+  // This function will be passed to Map component to handle zoom changes
+  const handleZoomChange = (newZoom: number) => {
+    setMapZoom(newZoom);
+    if (olMap) {
+      olMap.getView().setZoom(newZoom);
+    }
+  };
+
+  // This function will be passed to Map component to handle center changes
+  const handleCenterChange = (newCenter: [number, number]) => {
+    setMapCenter(newCenter);
+    if (olMap) {
+      const view = olMap.getView();
+      view.setCenter(fromLonLat(newCenter));
+    }
+  };
+
   return (
     <GameProvider>
       <div className="min-h-screen bg-background text-foreground dark flex flex-col">
@@ -42,15 +68,20 @@ const CommandCenter: React.FC = () => {
             {/* Layer 1: OpenLayers Map (Bottom) */}
             <div className="absolute inset-0 z-10">
               <OpenLayersMap
-                center={[30.5, 45.8]} 
-                zoom={3}
+                center={mapCenter} 
+                zoom={mapZoom}
                 className="w-full h-full"
+                onMapReady={handleMapReady}
               />
             </div>
             
             {/* Layer 2: Tactical Grid Map (Middle) */}
-            <div className="absolute inset-0 z-20">
-              <Map />
+            <div className="absolute inset-0 z-20 pointer-events-auto">
+              <Map 
+                disableMapZoom={true}
+                olMap={olMap}
+                onZoomChange={handleZoomChange}
+              />
             </div>
             
             {/* Layer 3: PixiJS Renderer (Top) */}
