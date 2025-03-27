@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import { GameProvider } from "@/context/GameContext";
 import Map from "@/components/Map";
 import Sidebar from "@/components/Sidebar";
@@ -16,41 +16,25 @@ const CommandCenter: React.FC = () => {
     setOLMap(map);
   };
 
-  // This function will be passed to Map component to handle zoom changes
   const handleZoomChange = (newZoom: number) => {
     setMapZoom(newZoom);
-    if (olMap) {
-      olMap.getView().setZoom(newZoom);
-    }
+    if (olMap) olMap.getView().setZoom(newZoom);
   };
 
-  // This function will be passed to Map component to handle center changes
   const handleCenterChange = (newCenter: [number, number]) => {
     setMapCenter(newCenter);
-    if (olMap) {
-      const view = olMap.getView();
-      view.setCenter(fromLonLat(newCenter));
-    }
+    if (olMap) olMap.getView().setCenter(fromLonLat(newCenter));
   };
 
   return (
     <GameProvider>
-      <div className="min-h-screen bg-background text-foreground dark flex flex-col">
-        {/* Header */}
+      <div className="min-h-screen bg-transparent text-foreground dark flex flex-col">
         <header className="glass-panel p-4 border-b border-border relative z-10">
           <div className="container mx-auto flex justify-between items-center">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <img 
-                  src="/assets/hellhound-icon.svg" 
-                  alt="Hellhound icon" 
-                  className="h-8 w-auto"
-                />
-                <img 
-                  src="/assets/text-logo.svg" 
-                  alt="Dicehaven" 
-                  className="h-6 w-auto"
-                />
+                <img src="/assets/hellhound-icon.svg" alt="Hellhound icon" className="h-8 w-auto" />
+                <img src="/assets/text-logo.svg" alt="Dicehaven" className="h-6 w-auto" />
               </div>
             </div>
             <nav className="flex items-center gap-6">
@@ -61,36 +45,23 @@ const CommandCenter: React.FC = () => {
           </div>
         </header>
 
-        {/* Main content */}
         <main className="flex-1 flex overflow-hidden p-4 gap-4">
-          {/* Main visualization container */}
-          <div className="flex-grow h-[calc(100vh-8rem)] overflow-hidden rounded-lg shadow-xl animate-fade-in relative">
-            {/* Layer 1: OpenLayers Map (Bottom) */}
+          <div className="flex-grow h-[calc(100vh-8rem)] overflow-hidden rounded-lg shadow-xl animate-fade-in relative bg-transparent">
             <div className="absolute inset-0 z-10">
               <OpenLayersMap
-                center={mapCenter} 
+                center={mapCenter}
                 zoom={mapZoom}
                 className="w-full h-full"
                 onMapReady={handleMapReady}
               />
             </div>
-            
-            {/* Layer 2: Tactical Grid Map (Middle) */}
             <div className="absolute inset-0 z-20 pointer-events-auto">
-              <Map 
-                disableMapZoom={true}
-                olMap={olMap}
-                onZoomChange={handleZoomChange}
-              />
+              <Map disableMapZoom={true} olMap={olMap} onZoomChange={handleZoomChange} />
             </div>
-            
-            {/* Layer 3: PixiJS Renderer (Top) */}
             <div className="absolute inset-0 z-30 pointer-events-none">
               <PixiRenderer width={1000} height={800} className="w-full h-full" />
             </div>
           </div>
-
-          {/* Sidebar */}
           <div className="w-80 flex-shrink-0 h-[calc(100vh-8rem)] animate-slide-in">
             <Sidebar />
           </div>
