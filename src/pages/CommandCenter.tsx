@@ -76,7 +76,7 @@ const CommandCenter: React.FC = () => {
             </div>
             
             {/* Layer 2: Tactical Grid Map (Middle) */}
-            <div className="absolute inset-0 z-20 pointer-events-auto">
+            <div className="absolute inset-0 z-20 pointer-events-auto bg-transparent">
               <Map 
                 disableMapZoom={true}
                 olMap={olMap}
