@@ -55,10 +55,10 @@ const CommandCenter: React.FC = () => {
                 onMapReady={handleMapReady}
               />
             </div>
-            <div className="absolute inset-0 z-20 pointer-events-none">
+            {/* <div className="absolute inset-0 z-20 pointer-events-none">
               <PixiRenderer width={1000} height={800} className="w-full h-full" />
             </div> 
-            {/* <div className="absolute inset-0 z-30 pointer-events-auto">
+            <div className="absolute inset-0 z-30 pointer-events-auto">
               <Map disableMapZoom={true} olMap={olMap} onZoomChange={handleZoomChange} />
             </div>*/}
    
