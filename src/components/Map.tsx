@@ -171,7 +171,7 @@ const Map: React.FC = () => {
   return (
     <div 
       ref={containerRef}
-      className="relative w-full h-full overflow-hidden bg-gray-900 rounded-lg"
+      className="relative w-full h-full overflow-hidden bg-transparent rounded-lg"
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
