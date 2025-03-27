@@ -1,4 +1,3 @@
-
 import React from "react";
 import { GridType } from "@/context/GameContext";
 
@@ -15,42 +14,46 @@ const GridOverlay: React.FC<GridOverlayProps> = ({ width, height, gridSize, grid
   }
 
   if (gridType === "square") {
-    // Create a square grid
-    const rows = Math.ceil(height / gridSize);
-    const cols = Math.ceil(width / gridSize);
+    const rows = Math.floor(height / gridSize);
+    const cols = Math.floor(width / gridSize);
+    const clampedWidth = cols * gridSize;
+    const clampedHeight = rows * gridSize;
 
-    // Create horizontal lines
     const horizontalLines = Array.from({ length: rows + 1 }, (_, i) => (
       <line
         key={`h-${i}`}
         x1="0"
         y1={i * gridSize}
-        x2={width}
+        x2={clampedWidth}
         y2={i * gridSize}
-        className="stroke-[#0A5C8C] stroke-[1px]"
+        stroke="#0A5C8C"
+        strokeWidth="1"
       />
     ));
 
-    // Create vertical lines
     const verticalLines = Array.from({ length: cols + 1 }, (_, i) => (
       <line
         key={`v-${i}`}
         x1={i * gridSize}
         y1="0"
         x2={i * gridSize}
-        y2={height}
-        className="stroke-[#0A5C8C] stroke-[1px]"
+        y2={clampedHeight}
+        stroke="#0A5C8C"
+        strokeWidth="1"
       />
     ));
 
     return (
       <svg
-        className="absolute inset-0 pointer-events-none bg-transparent"
+        className="absolute inset-0 pointer-events-none"
         width={width}
         height={height}
+        viewBox={`0 0 ${width} ${height}`}
+        preserveAspectRatio="none"
         xmlns="http://www.w3.org/2000/svg"
+        style={{ background: 'transparent' }} // Explicitly set transparent background
       >
-        <g className="fill-transparent">
+        <g fill="none"> {/* Ensure no fill on the group */}
           {horizontalLines}
           {verticalLines}
         </g>
@@ -58,12 +61,11 @@ const GridOverlay: React.FC<GridOverlayProps> = ({ width, height, gridSize, grid
     );
   }
 
-  // Hexagonal grid
   if (gridType === "hex") {
     const hexWidth = gridSize * Math.sqrt(3);
     const hexHeight = gridSize * 2;
-    const rows = Math.ceil(height / (hexHeight * 0.75));
-    const cols = Math.ceil(width / hexWidth);
+    const rows = Math.floor(height / (hexHeight * 0.75));
+    const cols = Math.floor(width / hexWidth);
 
     const hexagons = [];
     
@@ -73,32 +75,38 @@ const GridOverlay: React.FC<GridOverlayProps> = ({ width, height, gridSize, grid
         const x = col * hexWidth + (isEvenRow ? 0 : hexWidth / 2);
         const y = row * (hexHeight * 0.75);
         
-        // Calculate the points of the hexagon
-        const points = [
-          [x + hexWidth/2, y],
-          [x + hexWidth, y + hexHeight/4],
-          [x + hexWidth, y + hexHeight*3/4],
-          [x + hexWidth/2, y + hexHeight],
-          [x, y + hexHeight*3/4],
-          [x, y + hexHeight/4],
-        ].map(point => point.join(',')).join(' ');
-        
-        hexagons.push(
-          <polygon
-            key={`hex-${row}-${col}`}
-            points={points}
-            className=""
-          />
-        );
+        if (x + hexWidth <= width && y + hexHeight <= height) {
+          const points = [
+            [x + hexWidth/2, y],
+            [x + hexWidth, y + hexHeight/4],
+            [x + hexWidth, y + hexHeight*3/4],
+            [x + hexWidth/2, y + hexHeight],
+            [x, y + hexHeight*3/4],
+            [x, y + hexHeight/4],
+          ].map(point => point.join(',')).join(' ');
+          
+          hexagons.push(
+            <polygon
+              key={`hex-${row}-${col}`}
+              points={points}
+              stroke="#0A5C8C"
+              strokeWidth="1"
+              fill="none" // Explicitly set no fill
+            />
+          );
+        }
       }
     }
 
     return (
       <svg
-        className="absolute inset-0 pointer-events-none bg-transparent"
+        className="absolute inset-0 pointer-events-none"
         width={width}
         height={height}
+        viewBox={`0 0 ${width} ${height}`}
+        preserveAspectRatio="none"
         xmlns="http://www.w3.org/2000/svg"
+        style={{ background: 'transparent' }} // Explicitly set transparent background
       >
         {hexagons}
       </svg>
