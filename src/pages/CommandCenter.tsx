@@ -38,15 +38,13 @@ const CommandCenter: React.FC = () => {
               </div>
             </div>
             <nav className="flex items-center gap-6">
-              <a href="#" className="text-sm hover:text-primary transition-colors">Maps</a>
-              <a href="#" className="text-sm hover:text-primary transition-colors">Tactical View</a>
-              <a href="#" className="text-sm hover:text-primary transition-colors">Settings</a>
+              <a href="#" className="text-sm hover:text-primary transition-colors">Log In</a>
             </nav>
           </div>
         </header>
 
         <main className="flex-1 flex overflow-hidden p-4 gap-4">
-          <div className="flex-grow h-[calc(100vh-8rem)] overflow-hidden rounded-lg shadow-xl animate-fade-in relative bg-transparent">
+          <div className="flex-grow h-[calc(100vh-8rem)] overflow-hidden rounded-lg shadow-xl animate-fade-in relative bg-pink">
             <div className="absolute inset-0 z-10">
               <OpenLayersMap
                 center={mapCenter}
