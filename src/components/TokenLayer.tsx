@@ -71,9 +71,7 @@ const TokenLayer: React.FC = () => {
       
       {/* Token controls */}
       <div className="absolute top-4 right-4 glass-panel p-2 rounded-lg bg-transparent">
-        <button onClick={handleAddToken} className="flex items-center justify-center bg-accent text-accent-foreground px-3 py-1 rounded hover:bg-accent/80 transition-colors text-sm">
-          Add Token
-        </button>
+
       </div>
     </div>;
 };
