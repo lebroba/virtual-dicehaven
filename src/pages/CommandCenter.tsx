@@ -81,7 +81,8 @@ const CommandCenter: React.FC = () => {
   );
 };
 
-export default CommandCenter; */}
+export default CommandCenter;
+*/}
 
 import React from 'react';
 import OpenLayersMap from '@/components/OpenLayersMap';
