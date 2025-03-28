@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
+
+import React, { useState, useEffect } from "react";
 import { GameProvider } from "@/context/GameContext";
 import Map from "@/components/Map";
 import Sidebar from "@/components/Sidebar";
@@ -12,25 +13,25 @@ const CommandCenter: React.FC = () => {
   const [mapCenter, setMapCenter] = useState<[number, number]>([30.5, 45.8]);
   const [mapZoom, setMapZoom] = useState<number>(3);
 
-  // Memoize handleMapReady to prevent redefinition on every render
-  const handleMapReady = useCallback((map: OLMap) => {
-    console.log("Map is ready");
-    setOLMap(map);
-  }, []); // Empty dependency array: function is stable
-
-  // Debug map initialization
+  // Ensure map is initialized properly
   useEffect(() => {
     console.log("CommandCenter mounted, olMap:", olMap ? "initialized" : "not initialized");
     return () => console.log("CommandCenter unmounted");
   }, [olMap]);
 
-  // Update state only; OpenLayersMap handles view updates
+  const handleMapReady = (map: OLMap) => {
+    console.log("Map is ready");
+    setOLMap(map);
+  };
+
   const handleZoomChange = (newZoom: number) => {
     setMapZoom(newZoom);
+    if (olMap) olMap.getView().setZoom(newZoom);
   };
 
   const handleCenterChange = (newCenter: [number, number]) => {
     setMapCenter(newCenter);
+    if (olMap) olMap.getView().setCenter(fromLonLat(newCenter));
   };
 
   return (
@@ -55,8 +56,7 @@ const CommandCenter: React.FC = () => {
             className="flex-grow h-[calc(100vh-8rem)] overflow-hidden rounded-lg shadow-xl relative"
             style={{ background: 'transparent' }}
           >
-            {/* Layer 1: OpenLayers Map (Bottom) */}
-            <div className="absolute inset-0 z-10">
+            <div className="absolute inset-0" style={{ zIndex: 9999 }}>
               <OpenLayersMap
                 center={mapCenter}
                 zoom={mapZoom}
@@ -64,22 +64,18 @@ const CommandCenter: React.FC = () => {
                 onMapReady={handleMapReady}
               />
             </div>
-
-            {/* Layer 2: Tactical Grid Map (Middle) */}
-            <div className="absolute inset-0 z-20 pointer-events-auto">
-              <Map
-                disableMapZoom={true}
-                olMap={olMap}
+           
+            <div className="absolute inset-0 z-20 pointer-events-none">
+              <PixiRenderer width={1000} height={800} className="w-full h-full" />
+            </div> 
+            <div className="absolute inset-0 z-30 pointer-events-auto">
+              <Map 
+                disableMapZoom={true} 
+                olMap={olMap} 
                 onZoomChange={handleZoomChange}
               />
             </div>
-
-            {/* Layer 3: PixiJS Renderer (Top) */}
-            <div className="absolute inset-0 z-30 pointer-events-none">
-              <PixiRenderer width={1000} height={800} className="w-full h-full" />
-            </div>
           </div>
-
           <div className="w-80 flex-shrink-0 h-[calc(100vh-8rem)] animate-slide-in">
             <Sidebar />
           </div>
