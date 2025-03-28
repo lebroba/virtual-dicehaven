@@ -5,6 +5,8 @@ import Sidebar from "@/components/Sidebar";
 import PixiRenderer from "@/components/PixiRenderer";
 import OpenLayersMap from "@/components/OpenLayersMap";
 import MapControls from "@/components/MapControls"; // Updated import
+import { ConnectionStatusIndicator } from "@/components/ui/ConnectionStatus";
+import webSocketService from "@/utils/WebSocketService";
 import { type Map as OLMap } from 'ol';
 import { fromLonLat } from 'ol/proj';
 
@@ -20,7 +22,17 @@ const CommandCenter: React.FC = () => {
 
   useEffect(() => {
     console.log("CommandCenter mounted, olMap:", olMap ? "initialized" : "not initialized");
-    return () => console.log("CommandCenter unmounted");
+    
+    // Initialize WebSocket connection
+    webSocketService.connect().catch(error => {
+      console.error("Failed to connect to WebSocket server:", error);
+    });
+    
+    return () => {
+      console.log("CommandCenter unmounted");
+      // Close WebSocket connection when component unmounts
+      webSocketService.close();
+    };
   }, [olMap]);
 
   const handleZoomChange = (newZoom: number) => {
@@ -88,6 +100,7 @@ const CommandCenter: React.FC = () => {
               </div>
             </div>
             <nav className="flex items-center gap-6">
+              <ConnectionStatusIndicator />
               <a href="#" className="text-sm hover:text-primary transition-colors">Log In</a>
             </nav>
           </div>
