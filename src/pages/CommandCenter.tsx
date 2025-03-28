@@ -1,4 +1,3 @@
-{/*}
 import React, { useState, useEffect } from "react";
 import { GameProvider } from "@/context/GameContext";
 import Map from "@/components/Map";
@@ -78,25 +77,6 @@ const CommandCenter: React.FC = () => {
         </main>
       </div>
     </GameProvider>
-  );
-};
-
-export default CommandCenter;
-*/}
-
-import React from 'react';
-import OpenLayersMap from '@/components/OpenLayersMap';
-
-const CommandCenter: React.FC = () => {
-  return (
-    <div className="min-h-screen bg-transparent">
-      <OpenLayersMap
-        center={[0, 0]}
-        zoom={2}
-        className="w-full h-full"
-        onMapReady={() => console.log("Map ready")}
-      />
-    </div>
   );
 };
 
