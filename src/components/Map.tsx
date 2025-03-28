@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useState } from "react";
 import { useGame } from "@/context/GameContext";
 import GridOverlay from "./GridOverlay";
@@ -248,7 +249,7 @@ const Map: React.FC<MapProps> = ({
       {/* Roll20-style Action Bar (Left Side) */}
       <div className="absolute left-4 top-1/2 -translate-y-1/2 flex flex-col items-center z-10">
         <div className="glass-panel rounded-lg flex flex-col items-center shadow-xl">
-          {activityBarSections.map((section, sectionIndex) => (
+          {actionBarSections.map((section, sectionIndex) => (
             <div key={`section-${sectionIndex}`} className="w-full">
               {sectionIndex > 0 && (
                 <div className="px-2 py-1 text-xs uppercase text-center font-semibold bg-primary/10 border-t border-b border-white/10">
