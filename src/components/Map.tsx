@@ -27,7 +27,6 @@ const Map: React.FC<MapProps> = ({
     tokens
   } = useGame();
   const containerRef = useRef<HTMLDivElement>(null);
-  const dragPanRef = useRef<DragPan | null>(null); // Store the DragPan interaction
   const [containerDimensions, setContainerDimensions] = useState({
     width: 1000,
     height: 800
@@ -71,21 +70,20 @@ const Map: React.FC<MapProps> = ({
     // DragPan for panning
     const dragPan = new DragPan({
       condition: (event) => {
-        // Default condition: require Shift + left mouse button
-        return event.originalEvent.button === 0 && (selectedTool === 'pan' || event.originalEvent.shiftKey);
+        return event.originalEvent.button === 0 && event.originalEvent.shiftKey;
       },
     });
     dragPan.setActive(true);
     dragPan.set('target', containerRef.current);
     dragPan.set('view', view);
-    olMap.addInteraction(dragPan);
-    dragPanRef.current = dragPan; // Store the interaction in a ref
 
     // MouseWheelZoom for zooming
     const mouseWheelZoom = new MouseWheelZoom();
     mouseWheelZoom.setActive(!disableMapZoom);
     mouseWheelZoom.set('target', containerRef.current);
     mouseWheelZoom.set('view', view);
+
+    olMap.addInteraction(dragPan);
     olMap.addInteraction(mouseWheelZoom);
 
     // Function to update grid dimensions, position, and scale
@@ -107,6 +105,7 @@ const Map: React.FC<MapProps> = ({
 
       // Get the map's center in map coordinates
       const center = view.getCenter() || [0, 0];
+      const centerLonLat = toLonLat(center);
       const centerPixel = olMap.getPixelFromCoordinate(center);
 
       // Calculate the offset to align the grid with the map's center
@@ -147,7 +146,6 @@ const Map: React.FC<MapProps> = ({
     return () => {
       olMap.removeInteraction(dragPan);
       olMap.removeInteraction(mouseWheelZoom);
-      dragPanRef.current = null;
       view.un('change:resolution', updateGrid);
       view.un('change:center', updateGrid);
       if (onZoomChange) {
@@ -155,16 +153,6 @@ const Map: React.FC<MapProps> = ({
       }
     };
   }, [olMap, disableMapZoom, onZoomChange]);
-
-  // Update DragPan condition when selectedTool changes
-  useEffect(() => {
-    if (dragPanRef.current) {
-      dragPanRef.current.set('condition', (event: any) => {
-        // Allow panning with left mouse button if Pan Tool is selected, otherwise require Shift
-        return event.originalEvent.button === 0 && (selectedTool === 'pan' || event.originalEvent.shiftKey);
-      });
-    }
-  }, [selectedTool]);
 
   // Handle zoom in control
   const handleZoomIn = () => {
