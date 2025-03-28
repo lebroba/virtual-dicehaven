@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from "react";
 import { useGame } from "@/context/GameContext";
 import GridOverlay from "./GridOverlay";
@@ -6,8 +5,8 @@ import TokenLayer from "./TokenLayer";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Layers, Hand, PenTool, Ruler, Dice1, Settings, MousePointer, PaintBucket } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
-import { type Map as OLMap } from 'ol';
-import { fromLonLat } from 'ol/proj';
+import { type Map as OLMap, View } from 'ol';
+import { fromLonLat, toLonLat } from 'ol/proj';
 import { DragPan, MouseWheelZoom } from 'ol/interaction';
 
 interface MapProps {
@@ -28,10 +27,16 @@ const Map: React.FC<MapProps> = ({
     tokens
   } = useGame();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [dimensions, setDimensions] = useState({
+  const [containerDimensions, setContainerDimensions] = useState({
     width: 1000,
     height: 800
   });
+  const [gridDimensions, setGridDimensions] = useState({
+    width: 0,
+    height: 0
+  });
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [scale, setScale] = useState(1);
   const [backgroundImage, setBackgroundImage] = useState("/placeholder.svg");
   const [selectedTool, setSelectedTool] = useState<string>("select");
 
@@ -42,7 +47,21 @@ const Map: React.FC<MapProps> = ({
     "https://images.unsplash.com/photo-1519074069444-1ba4fff66d16?q=80&w=1000&auto=format&fit=crop"
   ];
 
-  // Add OpenLayers interactions to control the OpenLayersMap
+  // Update container dimensions
+  useEffect(() => {
+    if (containerRef.current) {
+      const resizeObserver = new ResizeObserver(entries => {
+        const { width, height } = entries[0].contentRect;
+        setContainerDimensions({ width, height });
+      });
+      resizeObserver.observe(containerRef.current);
+      return () => {
+        resizeObserver.disconnect();
+      };
+    }
+  }, []);
+
+  // Add OpenLayers interactions and sync grid with map
   useEffect(() => {
     if (!containerRef.current || !olMap) return;
 
@@ -51,7 +70,6 @@ const Map: React.FC<MapProps> = ({
     // DragPan for panning
     const dragPan = new DragPan({
       condition: (event) => {
-        // Only allow panning with left mouse button + Shift key (to avoid interfering with token dragging)
         return event.originalEvent.button === 0 && event.originalEvent.shiftKey;
       },
     });
@@ -68,6 +86,53 @@ const Map: React.FC<MapProps> = ({
     olMap.addInteraction(dragPan);
     olMap.addInteraction(mouseWheelZoom);
 
+    // Function to update grid dimensions, position, and scale
+    const updateGrid = () => {
+      if (!containerRef.current) return;
+
+      // Get the map's visible extent in map coordinates
+      const extent = view.calculateExtent(olMap.getSize());
+      const [minX, minY, maxX, maxY] = extent;
+
+      // Convert extent to pixel dimensions
+      const resolution = view.getResolution() || 1;
+      const widthInPixels = (maxX - minX) / resolution;
+      const heightInPixels = (maxY - minY) / resolution;
+      setGridDimensions({
+        width: widthInPixels,
+        height: heightInPixels
+      });
+
+      // Get the map's center in map coordinates
+      const center = view.getCenter() || [0, 0];
+      const centerLonLat = toLonLat(center);
+      const centerPixel = olMap.getPixelFromCoordinate(center);
+
+      // Calculate the offset to align the grid with the map's center
+      const containerWidth = containerRef.current.clientWidth;
+      const containerHeight = containerRef.current.clientHeight;
+      const offsetX = centerPixel[0] - containerWidth / 2;
+      const offsetY = centerPixel[1] - containerHeight / 2;
+
+      setPosition({
+        x: -offsetX,
+        y: -offsetY
+      });
+
+      // Calculate the scale based on the zoom level
+      const zoom = view.getZoom() || 3;
+      const baseZoom = 3; // The zoom level where scale = 1
+      const scaleFactor = Math.pow(2, zoom - baseZoom);
+      setScale(scaleFactor);
+    };
+
+    // Initial update
+    updateGrid();
+
+    // Listen for view changes
+    view.on('change:resolution', updateGrid); // Zoom changes
+    view.on('change:center', updateGrid); // Panning changes
+
     // Listen for zoom changes to update CommandCenter's state
     if (onZoomChange) {
       view.on('change:resolution', () => {
@@ -81,25 +146,13 @@ const Map: React.FC<MapProps> = ({
     return () => {
       olMap.removeInteraction(dragPan);
       olMap.removeInteraction(mouseWheelZoom);
+      view.un('change:resolution', updateGrid);
+      view.un('change:center', updateGrid);
       if (onZoomChange) {
         view.un('change:resolution', () => {});
       }
     };
   }, [olMap, disableMapZoom, onZoomChange]);
-
-  // Size the map container to fit the parent
-  useEffect(() => {
-    if (containerRef.current) {
-      const resizeObserver = new ResizeObserver(entries => {
-        const { width, height } = entries[0].contentRect;
-        setDimensions({ width, height });
-      });
-      resizeObserver.observe(containerRef.current);
-      return () => {
-        resizeObserver.disconnect();
-      };
-    }
-  }, []);
 
   // Handle zoom in control
   const handleZoomIn = () => {
@@ -235,11 +288,19 @@ const Map: React.FC<MapProps> = ({
       ref={containerRef}
       className="relative w-full h-full overflow-hidden bg-transparent rounded-lg"
     >
-      {/* Grid overlay and token layer - static relative to the OpenLayersMap */}
-      <div className="absolute inset-0 pointer-events-none bg-transparent">
+      {/* Grid overlay and token layer - move and scale with the map */}
+      <div
+        className="absolute inset-0 pointer-events-none bg-transparent"
+        style={{
+          transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
+          transformOrigin: 'center center',
+          width: gridDimensions.width,
+          height: gridDimensions.height
+        }}
+      >
         <GridOverlay
-          width={dimensions.width}
-          height={dimensions.height}
+          width={gridDimensions.width}
+          height={gridDimensions.height}
           gridSize={gridSize}
           gridType={gridType}
         />
