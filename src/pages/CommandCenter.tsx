@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { GameProvider } from "@/context/GameContext";
 import Map from "@/components/Map";
@@ -55,7 +56,7 @@ const CommandCenter: React.FC = () => {
             className="flex-grow h-[calc(100vh-8rem)] overflow-hidden rounded-lg shadow-xl relative"
             style={{ background: 'transparent' }}
           >
-            <div className="absolute inset-0" style={{ zIndex: 9999 }}>
+            <div className="absolute inset-0" style={{ zIndex: 1 }}>
               <OpenLayersMap
                 center={mapCenter}
                 zoom={mapZoom}
