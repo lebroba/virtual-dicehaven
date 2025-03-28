@@ -22,7 +22,7 @@ const MapControls: React.FC<MapControlsProps> = ({
         ←
       </button>
       <button className="center" onClick={onCenterClick} aria-label="Reset View">
-        ●
+      ⦿
       </button>
       <button className="rightarrow" onClick={onRightClick} aria-label="Pan Right">
         →

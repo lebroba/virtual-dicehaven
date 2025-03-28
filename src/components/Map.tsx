@@ -3,7 +3,7 @@ import { useGame } from "@/context/GameContext";
 import GridOverlay from "./GridOverlay";
 import TokenLayer from "./TokenLayer";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Layers, Hand, PenTool, Ruler, Dice1, Settings, MousePointer, PaintBucket, Eye, EyeOff } from "lucide-react";
+import { Layers, Hand, PenTool, Ruler, Dice1, Settings, MousePointer, PaintBucket, Eye, EyeOff, Map as MapIcon, Grid3x3, Puzzle } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { type Map as OLMap, View } from 'ol';
@@ -418,21 +418,21 @@ const Map: React.FC<MapProps> = ({
     {
       title: 'Layers',
       items: [
-        { 
-          id: 'map', 
-          icon: visibleLayers.map ? <Eye size={20} /> : <EyeOff size={20} />, 
+        {
+          id: 'map',
+          icon: <MapIcon size={20} />,
           tooltip: 'Toggle Map Layer',
           onClick: () => toggleLayerVisibility('map')
         },
-        { 
-          id: 'grid', 
-          icon: visibleLayers.grid ? <Eye size={20} /> : <EyeOff size={20} />, 
+        {
+          id: 'grid',
+          icon: <Grid3x3 size={20} />,
           tooltip: 'Toggle Grid Layer',
-          onClick: () => toggleLayerVisibility('grid') 
+          onClick: () => toggleLayerVisibility('grid')
         },
-        { 
-          id: 'tokens', 
-          icon: visibleLayers.tokens ? <Eye size={20} /> : <EyeOff size={20} />, 
+        {
+          id: 'tokens',
+          icon: <Puzzle size={20} />,
           tooltip: 'Toggle Token Layer',
           onClick: () => toggleLayerVisibility('tokens')
         }
@@ -546,43 +546,6 @@ const Map: React.FC<MapProps> = ({
           
           {/* Pan Directional Controls */}
           <div className="grid grid-cols-3 w-full">
-            <button
-              onClick={() => handlePanDirection('left')}
-              className="w-10 h-10 flex items-center justify-center hover:bg-primary/20 transition-colors"
-              aria-label="Pan left"
-            >
-              ←
-            </button>
-            <div className="flex flex-col">
-              <button
-                onClick={() => handlePanDirection('up')}
-                className="w-10 h-10 flex items-center justify-center hover:bg-primary/20 transition-colors"
-                aria-label="Pan up"
-              >
-                ↑
-              </button>
-              <button
-                onClick={handleCenterView}
-                className="w-10 h-10 flex items-center justify-center hover:bg-primary/20 transition-colors border border-white/10"
-                aria-label="Reset view"
-              >
-                ⦿
-              </button>
-              <button
-                onClick={() => handlePanDirection('down')}
-                className="w-10 h-10 flex items-center justify-center hover:bg-primary/20 transition-colors"
-                aria-label="Pan down"
-              >
-                ↓
-              </button>
-            </div>
-            <button
-              onClick={() => handlePanDirection('right')}
-              className="w-10 h-10 flex items-center justify-center hover:bg-primary/20 transition-colors"
-              aria-label="Pan right"
-            >
-              →
-            </button>
           </div>
           
           {/* Divider */}
