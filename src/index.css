@@ -155,4 +155,48 @@
   .transform-style-3d {
     transform-style: preserve-3d;
   }
+/* src/components/MapControls.css */
+.moveUI {
+  display: grid;
+  grid-template-columns: repeat(3, 40px);
+  grid-template-rows: repeat(3, 40px);
+  gap: 5px;
+  grid-template-areas:
+    ". uparrow ."
+    "leftarrow center rightarrow"
+    ". downarrow .";
+  justify-content: center;
+  align-content: center;
+  background-color: #333;
+  padding: 10px;
+  border-radius: 10px;
+  width: fit-content;
+}
+
+.leftarrow { grid-area: leftarrow; }
+.center { grid-area: center; }
+.rightarrow { grid-area: rightarrow; }
+.uparrow { grid-area: uparrow; }
+.downarrow { grid-area: downarrow; }
+
+.moveUI button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #555;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.moveUI button:hover {
+  background-color: #777;
+}
+
+.moveUI button:active {
+  background-color: #999;
+}
 }

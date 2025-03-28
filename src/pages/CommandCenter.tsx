@@ -1,10 +1,10 @@
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { GameProvider } from "@/context/GameContext";
 import Map from "@/components/Map";
 import Sidebar from "@/components/Sidebar";
 import PixiRenderer from "@/components/PixiRenderer";
 import OpenLayersMap from "@/components/OpenLayersMap";
+import MapControls from "@/components/MapControls"; // Updated import
 import { type Map as OLMap } from 'ol';
 import { fromLonLat } from 'ol/proj';
 
@@ -13,25 +13,67 @@ const CommandCenter: React.FC = () => {
   const [mapCenter, setMapCenter] = useState<[number, number]>([30.5, 45.8]);
   const [mapZoom, setMapZoom] = useState<number>(3);
 
-  // Ensure map is initialized properly
+  const handleMapReady = useCallback((map: OLMap) => {
+    console.log("Map is ready");
+    setOLMap(map);
+  }, []);
+
   useEffect(() => {
     console.log("CommandCenter mounted, olMap:", olMap ? "initialized" : "not initialized");
     return () => console.log("CommandCenter unmounted");
   }, [olMap]);
 
-  const handleMapReady = (map: OLMap) => {
-    console.log("Map is ready");
-    setOLMap(map);
-  };
-
   const handleZoomChange = (newZoom: number) => {
     setMapZoom(newZoom);
-    if (olMap) olMap.getView().setZoom(newZoom);
   };
 
   const handleCenterChange = (newCenter: [number, number]) => {
     setMapCenter(newCenter);
-    if (olMap) olMap.getView().setCenter(fromLonLat(newCenter));
+  };
+
+  // Handlers for map controls
+  const handleLeftClick = () => {
+    if (olMap) {
+      const view = olMap.getView();
+      const center = view.getCenter() || [0, 0];
+      const resolution = view.getResolution() || 1;
+      view.setCenter([center[0] - resolution * 100, center[1]]); // Pan left
+    }
+  };
+
+  const handleRightClick = () => {
+    if (olMap) {
+      const view = olMap.getView();
+      const center = view.getCenter() || [0, 0];
+      const resolution = view.getResolution() || 1;
+      view.setCenter([center[0] + resolution * 100, center[1]]); // Pan right
+    }
+  };
+
+  const handleUpClick = () => {
+    if (olMap) {
+      const view = olMap.getView();
+      const center = view.getCenter() || [0, 0];
+      const resolution = view.getResolution() || 1;
+      view.setCenter([center[0], center[1] + resolution * 100]); // Pan up
+    }
+  };
+
+  const handleDownClick = () => {
+    if (olMap) {
+      const view = olMap.getView();
+      const center = view.getCenter() || [0, 0];
+      const resolution = view.getResolution() || 1;
+      view.setCenter([center[0], center[1] - resolution * 100]); // Pan down
+    }
+  };
+
+  const handleCenterClick = () => {
+    if (olMap) {
+      olMap.getView().setCenter(fromLonLat([30.5, 45.8])); // Reset to default center
+      olMap.getView().setZoom(3); // Reset to default zoom
+      handleZoomChange(3);
+    }
   };
 
   return (
@@ -56,7 +98,7 @@ const CommandCenter: React.FC = () => {
             className="flex-grow h-[calc(100vh-8rem)] overflow-hidden rounded-lg shadow-xl relative"
             style={{ background: 'transparent' }}
           >
-            <div className="absolute inset-0" style={{ zIndex: 1 }}>
+            <div className="absolute inset-0 z-10">
               <OpenLayersMap
                 center={mapCenter}
                 zoom={mapZoom}
@@ -64,12 +106,25 @@ const CommandCenter: React.FC = () => {
                 onMapReady={handleMapReady}
               />
             </div>
-           
-            <div className="absolute inset-0 z-20 pointer-events-none">
+            <div className="absolute inset-0 z-20 pointer-events-auto">
+              <Map
+                disableMapZoom={true}
+                olMap={olMap}
+                onZoomChange={handleZoomChange}
+              />
+            </div>
+            <div className="absolute inset-0 z-30 pointer-events-none">
               <PixiRenderer width={1000} height={800} className="w-full h-full" />
-            </div> 
-            <div className="absolute inset-0 z-30 pointer-events-auto">
-              <Map disableMapZoom={true} olMap={olMap} onZoomChange={handleZoomChange} />
+            </div>
+            {/* MapControls in the bottom-right corner */}
+            <div className="absolute bottom-4 right-4 z-40 pointer-events-auto">
+              <MapControls
+                onLeftClick={handleLeftClick}
+                onRightClick={handleRightClick}
+                onUpClick={handleUpClick}
+                onDownClick={handleDownClick}
+                onCenterClick={handleCenterClick}
+              />
             </div>
           </div>
           <div className="w-80 flex-shrink-0 h-[calc(100vh-8rem)] animate-slide-in">
