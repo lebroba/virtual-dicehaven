@@ -11,7 +11,8 @@ const TokenLayer: React.FC = () => {
     updateToken,
     selectedTokenId,
     setSelectedTokenId,
-    gridSize
+    gridSize,
+    selectedTool
   } = useGame();
 
   // Add a new token at a random position
@@ -57,22 +58,41 @@ const TokenLayer: React.FC = () => {
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
   };
-  return <div onDrop={handleDrop} onDragOver={handleDragOver} className="absolute inset-0 pointer-events-auto bg-transparent">
+  
+  return (
+    <div 
+      onDrop={handleDrop} 
+      onDragOver={handleDragOver} 
+      className={`absolute inset-0 ${selectedTokenId || selectedTool === 'select' ? 'pointer-events-auto' : 'pointer-events-none'} bg-transparent`}
+      style={{ zIndex: 10 }} // Higher than map, lower than UI
+    >
       {/* Render each token */}
-      {tokens.map(token => <div key={token.id} draggable onDragStart={e => handleDragStart(e, token.id)} onClick={() => setSelectedTokenId(token.id)} className={`absolute token rounded-full overflow-hidden ${selectedTokenId === token.id ? "ring-2 ring-primary animate-ping-slow" : ""}`} style={{
-      left: token.x,
-      top: token.y,
-      width: token.size,
-      height: token.size,
-      zIndex: selectedTokenId === token.id ? 10 : 1
-    }}>
+      {tokens.map(token => (
+        <div 
+          key={token.id} 
+          draggable 
+          onDragStart={e => handleDragStart(e, token.id)} 
+          onClick={() => setSelectedTokenId(token.id)} 
+          className={`absolute token rounded-full overflow-hidden ${
+            selectedTokenId === token.id ? "ring-2 ring-primary animate-ping-slow" : ""
+          }`} 
+          style={{
+            left: token.x,
+            top: token.y,
+            width: token.size,
+            height: token.size,
+            zIndex: selectedTokenId === token.id ? 15 : 10
+          }}
+        >
           <img src={token.image} alt={token.name} className="w-full h-full object-cover" />
-        </div>)}
+        </div>
+      ))}
       
       {/* Token controls */}
       <div className="absolute top-4 right-4 glass-panel p-2 rounded-lg bg-transparent">
-
+        {/* Token layer controls could go here */}
       </div>
-    </div>;
+    </div>
+  );
 };
 export default TokenLayer;

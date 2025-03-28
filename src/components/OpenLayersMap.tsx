@@ -81,7 +81,7 @@ const OpenLayersMap: React.FC<OpenLayersMapProps> = ({
         width: '100%', 
         height: '100%', 
         position: 'relative',
-        zIndex: 1,
+        zIndex: 5, // Increased from 1 to 5 for better layering
         background: 'transparent'
       }} 
     />

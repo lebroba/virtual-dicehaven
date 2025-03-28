@@ -3,8 +3,9 @@ import { useGame } from "@/context/GameContext";
 import GridOverlay from "./GridOverlay";
 import TokenLayer from "./TokenLayer";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Layers, Hand, PenTool, Ruler, Dice1, Settings, MousePointer, PaintBucket } from "lucide-react";
+import { Layers, Hand, PenTool, Ruler, Dice1, Settings, MousePointer, PaintBucket, Eye, EyeOff } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
+import { Button } from "@/components/ui/button";
 import { type Map as OLMap, View } from 'ol';
 import { fromLonLat, toLonLat } from 'ol/proj';
 import { DragPan, MouseWheelZoom } from 'ol/interaction';
@@ -24,9 +25,12 @@ const Map: React.FC<MapProps> = ({
     gridType,
     gridSize,
     selectedTokenId,
-    tokens
+    tokens,
+    selectedTool,
+    setSelectedTool
   } = useGame();
   const containerRef = useRef<HTMLDivElement>(null);
+  const dragPanRef = useRef<DragPan | null>(null); // Store the DragPan interaction
   const [containerDimensions, setContainerDimensions] = useState({
     width: 1000,
     height: 800
@@ -38,7 +42,11 @@ const Map: React.FC<MapProps> = ({
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [scale, setScale] = useState(1);
   const [backgroundImage, setBackgroundImage] = useState("/placeholder.svg");
-  const [selectedTool, setSelectedTool] = useState<string>("select");
+  const [visibleLayers, setVisibleLayers] = useState({
+    map: true,
+    grid: true,
+    tokens: true
+  });
 
   // Sample background images to choose from
   const sampleBackgrounds = [
@@ -70,20 +78,21 @@ const Map: React.FC<MapProps> = ({
     // DragPan for panning
     const dragPan = new DragPan({
       condition: (event) => {
-        return event.originalEvent.button === 0 && event.originalEvent.shiftKey;
+        // Default condition: require Shift + left mouse button
+        return event.originalEvent.button === 0 && (selectedTool === 'pan' || event.originalEvent.shiftKey);
       },
     });
     dragPan.setActive(true);
     dragPan.set('target', containerRef.current);
     dragPan.set('view', view);
+    olMap.addInteraction(dragPan);
+    dragPanRef.current = dragPan; // Store the interaction in a ref
 
     // MouseWheelZoom for zooming
     const mouseWheelZoom = new MouseWheelZoom();
     mouseWheelZoom.setActive(!disableMapZoom);
     mouseWheelZoom.set('target', containerRef.current);
     mouseWheelZoom.set('view', view);
-
-    olMap.addInteraction(dragPan);
     olMap.addInteraction(mouseWheelZoom);
 
     // Function to update grid dimensions, position, and scale
@@ -105,7 +114,6 @@ const Map: React.FC<MapProps> = ({
 
       // Get the map's center in map coordinates
       const center = view.getCenter() || [0, 0];
-      const centerLonLat = toLonLat(center);
       const centerPixel = olMap.getPixelFromCoordinate(center);
 
       // Calculate the offset to align the grid with the map's center
@@ -146,19 +154,38 @@ const Map: React.FC<MapProps> = ({
     return () => {
       olMap.removeInteraction(dragPan);
       olMap.removeInteraction(mouseWheelZoom);
+      dragPanRef.current = null;
       view.un('change:resolution', updateGrid);
       view.un('change:center', updateGrid);
       if (onZoomChange) {
         view.un('change:resolution', () => {});
       }
     };
-  }, [olMap, disableMapZoom, onZoomChange]);
+  }, [olMap, disableMapZoom, onZoomChange, selectedTool]);
+
+  // Update DragPan condition when selectedTool changes
+  useEffect(() => {
+    if (dragPanRef.current) {
+      dragPanRef.current.set('condition', (event: any) => {
+        // Allow panning with left mouse button if Pan Tool is selected, otherwise require Shift
+        return event.originalEvent.button === 0 && (selectedTool === 'pan' || event.originalEvent.shiftKey);
+      });
+    }
+  }, [selectedTool]);
 
   // Handle zoom in control
   const handleZoomIn = () => {
     if (olMap && onZoomChange) {
       const currentZoom = olMap.getView().getZoom() || 3;
       const newZoom = Math.min(currentZoom + 1, 19);
+      
+      // Animate zoom
+      olMap.getView().animate({
+        zoom: newZoom,
+        duration: 250,
+        easing: (t) => t
+      });
+      
       onZoomChange(newZoom);
     }
   };
@@ -168,6 +195,14 @@ const Map: React.FC<MapProps> = ({
     if (olMap && onZoomChange) {
       const currentZoom = olMap.getView().getZoom() || 3;
       const newZoom = Math.max(currentZoom - 1, 0);
+      
+      // Animate zoom
+      olMap.getView().animate({
+        zoom: newZoom,
+        duration: 250,
+        easing: (t) => t
+      });
+      
       onZoomChange(newZoom);
     }
   };
@@ -176,6 +211,13 @@ const Map: React.FC<MapProps> = ({
   const handleZoomSliderChange = (value: number[]) => {
     if (olMap && onZoomChange) {
       const newZoom = sliderValueToZoom(value[0]);
+      
+      // Animate zoom smoothly
+      olMap.getView().animate({
+        zoom: newZoom,
+        duration: 150
+      });
+      
       onZoomChange(newZoom);
     }
   };
@@ -198,15 +240,98 @@ const Map: React.FC<MapProps> = ({
     return (sliderValue / 100) * 19;
   };
 
-  // Handle center view
+  // Handle center view with animation
   const handleCenterView = () => {
     if (olMap) {
-      olMap.getView().setCenter(fromLonLat([30.5, 45.8]));
-      olMap.getView().setZoom(3);
+      // Animate the view to the default center and zoom
+      olMap.getView().animate({
+        center: fromLonLat([30.5, 45.8]),
+        zoom: 3,
+        duration: 500,
+        easing: (t) => {
+          // Ease out cubic function for smooth animation
+          return --t * t * t + 1;
+        }
+      });
+      
       if (onZoomChange) {
-        onZoomChange(3);
+        // Wait until animation is complete to update the zoom control
+        setTimeout(() => {
+          onZoomChange(3);
+        }, 500);
       }
     }
+  };
+
+  // Direction panning functions with dynamic distance calculation
+  const handlePanDirection = (direction: 'left' | 'right' | 'up' | 'down') => {
+    if (!olMap) return;
+    
+    const view = olMap.getView();
+    const currentCenter = view.getCenter() || [0, 0];
+    const resolution = view.getResolution() || 1;
+    
+    let newCenter = [...currentCenter];
+    
+    // Calculate pan distance based on current zoom level and view size
+    if (containerRef.current) {
+      const viewportWidth = containerRef.current.clientWidth;
+      const viewportHeight = containerRef.current.clientHeight;
+      
+      // Use 20% of viewport size for panning distance
+      const horizontalPan = viewportWidth * 0.2 * resolution;
+      const verticalPan = viewportHeight * 0.2 * resolution;
+      
+      switch(direction) {
+        case 'left':
+          newCenter[0] -= horizontalPan;
+          break;
+        case 'right':
+          newCenter[0] += horizontalPan;
+          break;
+        case 'up':
+          newCenter[1] += verticalPan;
+          break;
+        case 'down':
+          newCenter[1] -= verticalPan;
+          break;
+      }
+    } else {
+      // Fallback if containerRef is not available
+      const distance = 200 / resolution;
+      switch(direction) {
+        case 'left':
+          newCenter[0] -= distance;
+          break;
+        case 'right':
+          newCenter[0] += distance;
+          break;
+        case 'up':
+          newCenter[1] += distance;
+          break;
+        case 'down':
+          newCenter[1] -= distance;
+          break;
+      }
+    }
+    
+    // Animate the pan with easing
+    view.animate({
+      center: newCenter,
+      duration: 250,
+      easing: (t) => {
+        // Ease out cubic function: acceleration then deceleration
+        return --t * t * t + 1;
+      }
+    });
+    
+    // Force grid update after animation
+    setTimeout(() => {
+      if (olMap) {
+        olMap.updateSize();
+        olMap.render();
+      }
+    }, 300);
   };
 
   // Find and center on the selected token
@@ -225,13 +350,24 @@ const Map: React.FC<MapProps> = ({
 
     // Since we don't have proper geo-coordinates for tokens, we'll just zoom in slightly
     const currentCenter = olMap.getView().getCenter() || [0, 0];
-    olMap.getView().setCenter(currentCenter);
     const currentZoom = olMap.getView().getZoom() || 3;
     const newZoom = Math.min(currentZoom + 1, 19);
-    olMap.getView().setZoom(newZoom);
+    
+    // Animate to the token with a smooth transition
+    olMap.getView().animate({
+      center: currentCenter,
+      zoom: newZoom,
+      duration: 300,
+      easing: (t) => {
+        // Ease out cubic
+        return --t * t * t + 1;
+      }
+    });
 
     if (onZoomChange) {
-      onZoomChange(newZoom);
+      setTimeout(() => {
+        onZoomChange(newZoom);
+      }, 300);
     }
   };
 
@@ -239,6 +375,21 @@ const Map: React.FC<MapProps> = ({
   const handleToolSelect = (tool: string) => {
     setSelectedTool(tool);
     console.log(`Selected tool: ${tool}`);
+    
+    // If selecting pan tool, give visual feedback that map panning is active
+    if (tool === 'pan' && containerRef.current) {
+      containerRef.current.style.cursor = 'grab';
+    } else if (containerRef.current) {
+      containerRef.current.style.cursor = 'default';
+    }
+  };
+
+  // Toggle layer visibility
+  const toggleLayerVisibility = (layer: keyof typeof visibleLayers) => {
+    setVisibleLayers(prev => ({
+      ...prev,
+      [layer]: !prev[layer]
+    }));
   };
 
   // Change the background image
@@ -267,9 +418,24 @@ const Map: React.FC<MapProps> = ({
     {
       title: 'Layers',
       items: [
-        { id: 'map', icon: <Layers size={20} />, tooltip: 'Map Layer' },
-        { id: 'tokens', icon: <div className="text-xs font-bold">T</div>, tooltip: 'Token Layer' },
-        { id: 'gm', icon: <div className="text-xs font-bold">GM</div>, tooltip: 'GM Layer' }
+        { 
+          id: 'map', 
+          icon: visibleLayers.map ? <Eye size={20} /> : <EyeOff size={20} />, 
+          tooltip: 'Toggle Map Layer',
+          onClick: () => toggleLayerVisibility('map')
+        },
+        { 
+          id: 'grid', 
+          icon: visibleLayers.grid ? <Eye size={20} /> : <EyeOff size={20} />, 
+          tooltip: 'Toggle Grid Layer',
+          onClick: () => toggleLayerVisibility('grid') 
+        },
+        { 
+          id: 'tokens', 
+          icon: visibleLayers.tokens ? <Eye size={20} /> : <EyeOff size={20} />, 
+          tooltip: 'Toggle Token Layer',
+          onClick: () => toggleLayerVisibility('tokens')
+        }
       ]
     },
     {
@@ -287,28 +453,57 @@ const Map: React.FC<MapProps> = ({
     <div
       ref={containerRef}
       className="relative w-full h-full overflow-hidden bg-transparent rounded-lg"
+      style={{ isolation: 'isolate' }} // Create a stacking context
     >
-      {/* Grid overlay and token layer - move and scale with the map */}
-      <div
-        className="absolute inset-0 pointer-events-none bg-transparent"
-        style={{
-          transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
-          transformOrigin: 'center center',
-          width: gridDimensions.width,
-          height: gridDimensions.height
-        }}
-      >
-        <GridOverlay
-          width={gridDimensions.width}
-          height={gridDimensions.height}
-          gridSize={gridSize}
-          gridType={gridType}
-        />
-        <TokenLayer />
+      {/* Use CSS Grid to manage layers more effectively */}
+      <div className="grid grid-cols-1 grid-rows-1 w-full h-full">
+        {/* Map layer */}
+        <div 
+          className="col-start-1 row-start-1 w-full h-full"
+          style={{ 
+            zIndex: 1,
+            visibility: visibleLayers.map ? 'visible' : 'hidden'
+          }}
+        >
+          {/* OpenLayers Map renders here */}
+        </div>
+        
+        {/* Grid layer */}
+        <div className="col-start-1 row-start-1 w-full h-full">
+          <div
+            className="absolute inset-0 pointer-events-none bg-transparent"
+            style={{
+              transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
+              transformOrigin: 'center center',
+              width: gridDimensions.width,
+              height: gridDimensions.height,
+              zIndex: 5,
+              visibility: visibleLayers.grid ? 'visible' : 'hidden'
+            }}
+          >
+            <GridOverlay
+              width={gridDimensions.width}
+              height={gridDimensions.height}
+              gridSize={gridSize}
+              gridType={gridType}
+            />
+          </div>
+        </div>
+        
+        {/* Token layer */}
+        <div 
+          className="col-start-1 row-start-1 w-full h-full"
+          style={{
+            zIndex: 10,
+            visibility: visibleLayers.tokens ? 'visible' : 'hidden'
+          }}
+        >
+          <TokenLayer />
+        </div>
       </div>
 
-      {/* Roll20-style Action Bar (Left Side) */}
-      <div className="absolute left-4 top-1/2 -translate-y-1/2 flex flex-col items-center z-10">
+      {/* Tool Action Bar (Left Side) */}
+      <div className="absolute left-4 top-1/2 -translate-y-1/2 flex flex-col items-center z-20">
         <div className="glass-panel rounded-lg flex flex-col items-center shadow-xl">
           {actionBarSections.map((section, sectionIndex) => (
             <div key={`section-${sectionIndex}`} className="w-full">
@@ -322,7 +517,7 @@ const Map: React.FC<MapProps> = ({
                   <Tooltip key={item.id}>
                     <TooltipTrigger asChild>
                       <button
-                        onClick={() => handleToolSelect(item.id)}
+                        onClick={() => item.onClick ? item.onClick() : handleToolSelect(item.id)}
                         className={`w-10 h-10 flex items-center justify-center transition-colors ${
                           selectedTool === item.id ? 'bg-primary/30 text-primary-foreground' : 'hover:bg-white/10 text-foreground/80'
                         }`}
@@ -342,12 +537,58 @@ const Map: React.FC<MapProps> = ({
         </div>
       </div>
 
-      {/* Roll20-style Zoom Control Panel */}
-      <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-center">
+      {/* Map Controls Panel */}
+      <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-center z-20">
         <div className="glass-panel rounded-lg flex flex-col items-center overflow-hidden">
-          <div className="bg-secondary/80 w-10 h-10 flex items-center justify-center text-sm font-medium border-b border-white/10">
+          <div className="bg-secondary/80 w-full py-1 flex items-center justify-center text-sm font-medium border-b border-white/10">
             {olMap ? currentMapZoom : 3}
           </div>
+          
+          {/* Pan Directional Controls */}
+          <div className="grid grid-cols-3 w-full">
+            <button
+              onClick={() => handlePanDirection('left')}
+              className="w-10 h-10 flex items-center justify-center hover:bg-primary/20 transition-colors"
+              aria-label="Pan left"
+            >
+              ←
+            </button>
+            <div className="flex flex-col">
+              <button
+                onClick={() => handlePanDirection('up')}
+                className="w-10 h-10 flex items-center justify-center hover:bg-primary/20 transition-colors"
+                aria-label="Pan up"
+              >
+                ↑
+              </button>
+              <button
+                onClick={handleCenterView}
+                className="w-10 h-10 flex items-center justify-center hover:bg-primary/20 transition-colors border border-white/10"
+                aria-label="Reset view"
+              >
+                ⦿
+              </button>
+              <button
+                onClick={() => handlePanDirection('down')}
+                className="w-10 h-10 flex items-center justify-center hover:bg-primary/20 transition-colors"
+                aria-label="Pan down"
+              >
+                ↓
+              </button>
+            </div>
+            <button
+              onClick={() => handlePanDirection('right')}
+              className="w-10 h-10 flex items-center justify-center hover:bg-primary/20 transition-colors"
+              aria-label="Pan right"
+            >
+              →
+            </button>
+          </div>
+          
+          {/* Divider */}
+          <div className="border-t border-white/10 w-full my-1"></div>
+          
+          {/* Zoom Controls */}
           <button
             onClick={handleZoomIn}
             className="w-10 h-10 flex items-center justify-center hover:bg-primary/20 transition-colors"
@@ -372,6 +613,8 @@ const Map: React.FC<MapProps> = ({
           >
             -
           </button>
+          
+          {/* Token Focus Button */}
           <button
             onClick={handleFocusSelected}
             disabled={!selectedTokenId}
@@ -393,7 +636,7 @@ const Map: React.FC<MapProps> = ({
       </div>
 
       {/* Map info and status */}
-      <div className="absolute top-4 left-4 glass-panel px-3 py-1 rounded-lg text-sm">
+      <div className="absolute top-4 left-4 glass-panel px-3 py-1 rounded-lg text-sm z-20">
         <div className="font-semibold">Battle Map</div>
         <div className="text-xs text-muted-foreground">Zoom: {currentMapZoom}x</div>
       </div>

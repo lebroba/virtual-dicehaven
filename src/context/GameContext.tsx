@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, ReactNode } from "react";
 
 export type TokenType = {
@@ -61,6 +60,8 @@ type GameContextType = {
   addToken: (token: TokenType) => void;
   updateToken: (id: string, updates: Partial<TokenType>) => void;
   removeToken: (id: string) => void;
+  selectedTool: string;
+  setSelectedTool: (tool: string) => void;
   selectedTokenId: string | null;
   setSelectedTokenId: (id: string | null) => void;
   diceRolls: DiceRollType[];
@@ -88,6 +89,7 @@ const GameContext = createContext<GameContextType | undefined>(undefined);
 export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [currentMap, setCurrentMap] = useState<MapType | null>(null);
   const [tokens, setTokens] = useState<TokenType[]>([]);
+  const [selectedTool, setSelectedTool] = useState<string>('select');
   const [selectedTokenId, setSelectedTokenId] = useState<string | null>(null);
   const [diceRolls, setDiceRolls] = useState<DiceRollType[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessageType[]>([]);
@@ -195,6 +197,8 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         addToken,
         updateToken,
         removeToken,
+        selectedTool,
+        setSelectedTool,
         selectedTokenId,
         setSelectedTokenId,
         diceRolls,
