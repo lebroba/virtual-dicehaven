@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import Map from 'ol/Map';
 import View from 'ol/View';
@@ -8,7 +7,7 @@ import { fromLonLat } from 'ol/proj';
 import 'ol/ol.css';
 
 interface OpenLayersMapProps {
-  center?: [number, number]; // [longitude, latitude]
+  center?: [number, number];
   zoom?: number;
   className?: string;
   onMapReady?: (map: Map) => void;
@@ -23,22 +22,16 @@ const OpenLayersMap: React.FC<OpenLayersMapProps> = ({
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<Map | null>(null);
 
-  // Initialize OpenLayers map
   useEffect(() => {
     if (!mapRef.current) return;
 
     console.log("Initializing OpenLayers map");
 
-    // Create the OpenLayers map
     const olMap = new Map({
       target: mapRef.current,
       layers: [
         new TileLayer({
-          source: new OSM({
-            // Use a standard OpenStreetMap source to ensure it loads properly
-            url: 'https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-          }),
-          opacity: 1.0,
+          source: new OSM(),
         }),
       ],
       view: new View({
@@ -50,13 +43,8 @@ const OpenLayersMap: React.FC<OpenLayersMapProps> = ({
     });
 
     setMap(olMap);
-    
-    // Call onMapReady callback with the created map
-    if (onMapReady) {
-      onMapReady(olMap);
-    }
+    if (onMapReady) onMapReady(olMap);
 
-    // Ensure map resizes with container
     const handleResize = () => {
       setTimeout(() => {
         olMap.updateSize();
@@ -64,32 +52,37 @@ const OpenLayersMap: React.FC<OpenLayersMapProps> = ({
     };
 
     window.addEventListener('resize', handleResize);
+    handleResize();
 
-    // Cleanup function
     return () => {
       window.removeEventListener('resize', handleResize);
       olMap.setTarget(undefined);
       setMap(null);
     };
-  }, [onMapReady]);
+  }, []);
 
-  // Update map view when props change
   useEffect(() => {
     if (!map) return;
-    
+    console.log("Updating map view:", { center, zoom });
     map.getView().setCenter(fromLonLat(center));
     map.getView().setZoom(zoom);
   }, [map, center, zoom]);
 
+  useEffect(() => {
+    if (!map || !onMapReady) return;
+    onMapReady(map);
+  }, [map, onMapReady]);
+
   return (
     <div 
       ref={mapRef} 
-      className={`${className || ''}`} 
+      className={`${className || ''} bg-transparent`} 
       style={{ 
         width: '100%', 
         height: '100%', 
         position: 'relative',
-        zIndex: 1 
+        zIndex: 1,
+        background: 'transparent'
       }} 
     />
   );
