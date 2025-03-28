@@ -56,7 +56,7 @@ const CommandCenter: React.FC = () => {
             className="flex-grow h-[calc(100vh-8rem)] overflow-hidden rounded-lg shadow-xl relative"
             style={{ background: 'transparent' }}
           >
-            <div className="absolute inset-0" style={{ zIndex: 9999 }}>
+            <div className="absolute inset-0" style={{ zIndex: 1}}>
               <OpenLayersMap
                 center={mapCenter}
                 zoom={mapZoom}
@@ -69,11 +69,7 @@ const CommandCenter: React.FC = () => {
               <PixiRenderer width={1000} height={800} className="w-full h-full" />
             </div> 
             <div className="absolute inset-0 z-30 pointer-events-auto">
-              <Map 
-                disableMapZoom={true} 
-                olMap={olMap} 
-                onZoomChange={handleZoomChange}
-              />
+              <Map disableMapZoom={true} olMap={olMap} onZoomChange={handleZoomChange} />
             </div>
           </div>
           <div className="w-80 flex-shrink-0 h-[calc(100vh-8rem)] animate-slide-in">
