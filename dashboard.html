@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hero Ship Systems Dashboard</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #0f172a;
+      color: white;
+    }
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-gap: 16px;
+      padding: 20px;
+    }
+    .card {
+      background-color: #1e293b;
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .card h3 {
+      margin-top: 0;
+    }
+    .status {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+    .green { background-color: #16a34a; }
+    .orange { background-color: #f97316; }
+    .red { background-color: #dc2626; }
+    .grey { background-color: #94a3b8; }
+    .tab-buttons {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .tab-buttons button {
+      background-color: #334155;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .tab-buttons button.active {
+      background-color: #0ea5e9;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .ship-silhouette-card {
+      grid-column: span 4;
+      background-color: #1e293b;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .ship-silhouette-card img {
+      max-width: 100%;
+      height: auto;
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+    <div class="card">
+      <h3>Main Gun</h3>
+      <div><span class="status green"></span> Fully Mission Capable</div>
+    </div>
+
+    <div class="card">
+      <h3>CIWS</h3>
+      <div><span class="status orange"></span> Partially Mission Capable</div>
+    </div>
+
+    <div class="card">
+      <h3>VLS System</h3>
+      <div><span class="status green"></span> Fully Mission Capable</div>
+    </div>
+
+    <div class="card">
+      <h3>Torpedo Tubes</h3>
+      <div><span class="status green"></span> Fully Mission Capable</div>
+    </div>
+
+    <div class="card">
+      <h3>Engineering</h3>
+      <div><span class="status green"></span> Fully Mission Capable</div>
+    </div>
+
+    <div class="card">
+      <h3>Generators</h3>
+      <div><span class="status green"></span> Fully Mission Capable</div>
+    </div>
+
+    <div class="card">
+      <h3>Aviation Facilities</h3>
+      <div><span class="status orange"></span> Partially Mission Capable</div>
+    </div>
+
+    <div class="card">
+      <h3>Damage Control</h3>
+      <div><span class="status green"></span> Fully Mission Capable</div>
+    </div>
+
+    <div class="card">
+      <h3>Sensors</h3>
+      <div class="tab-buttons">
+        <button class="tab-button active" onclick="switchTab('radar')">Radar</button>
+        <button class="tab-button" onclick="switchTab('sonar')">Sonar</button>
+        <button class="tab-button" onclick="switchTab('es')">EW</button>
+      </div>
+      <div id="radar" class="tab-content active">
+        <div><span class="status green"></span> SPY-1D(V)</div>
+        <div><span class="status green"></span> SPG-62</div>
+        <div><span class="status green"></span> SPQ-9B</div>
+      </div>
+      <div id="sonar" class="tab-content">
+        <div><span class="status green"></span> SQS-53C</div>
+        <div><span class="status green"></span> TB-37 MFTA</div>
+      </div>
+      <div id="es" class="tab-content">
+        <div><span class="status green"></span> SLQ-32(V)6</div>
+        <div><span class="status orange"></span> Nulka Decoys</div>
+      </div>
+    </div>
+
+    <div class="ship-silhouette-card">
+      <h3>Ship Silhouette / Damage Control Display</h3>
+      <img src="/mnt/data/image.png" alt="Ship Silhouette">
+    </div>
+  </div>
+
+  <script>
+    function switchTab(tabId) {
+      const buttons = document.querySelectorAll('.tab-button');
+      const contents = document.querySelectorAll('.tab-content');
+      buttons.forEach(btn => btn.classList.remove('active'));
+      contents.forEach(c => c.classList.remove('active'));
+      document.querySelector(`#${tabId}`).classList.add('active');
+      event.target.classList.add('active');
+    }
+  </script>
+</body>
+</html>

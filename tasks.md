@@ -8,39 +8,39 @@ This checklist provides a granular breakdown of each user story into one-story-p
 
     *   US01: As a user, I want to access the application via a web browser, so that I can start playing the game.
 
-        *   [ ] Task 1.1: Create basic HTML structure (head, body, title)
-            *   [ ] Specify doctype: `<!DOCTYPE html>`
-            *   [ ] Set `<title>` to "Naval Sim"
-        *   [ ] Task 1.2: Create a basic CSS file and link it to the HTML.
-            *   [ ] Name the CSS file `style.css`
-            *   [ ] Basic CSS resets (margin, padding, box-sizing)
-        *   [ ] Task 1.3: Create a JavaScript file and link it to the HTML.
-            *   [ ] Name the JS file `app.js`
-            *   [ ] Ensure the script tag is placed before the closing `</body>` tag
-        *   [ ] Task 1.4: Create a loading spinner element.
-            *   [ ] Add a simple CSS animation for the spinner.
-        *   [ ] Task 1.5: Display a "Loading..." message while the application loads.
-            *   [ ] Use JavaScript to hide the loading message after page load.
-        *   [ ] Task 1.6: Check compatibility with modern browsers (Chrome, Firefox, Safari, Edge).
-            *   [ ] Verify correct rendering in each browser.
+        *   [X] Task 1.1: Create basic HTML structure (head, body, title)
+            *   [X] Specify doctype: `<!DOCTYPE html>`
+            *   [X] Set `<title>` to "Naval Sim"
+        *   [X] Task 1.2: Create a basic CSS file and link it to the HTML.
+            *   [X] Name the CSS file `style.css`
+            *   [X] Basic CSS resets (margin, padding, box-sizing)
+        *   [X] Task 1.3: Create a JavaScript file and link it to the HTML.
+            *   [X] Name the JS file `app.js`
+            *   [X] Ensure the script tag is placed before the closing `</body>` tag
+        *   [X] Task 1.4: Create a loading spinner element.
+            *   [X] Add a simple CSS animation for the spinner.
+        *   [X] Task 1.5: Display a "Loading..." message while the application loads.
+            *   [X] Use JavaScript to hide the loading message after page load.
+        *   [X] Task 1.6: Check compatibility with modern browsers (Chrome, Firefox, Safari, Edge).
+            *   [x] Verify correct rendering in each browser.
 
 *   **Feature: WebSocket Communication (F12)**
 
     *   US02: As a frontend developer, I want to establish a persistent WebSocket connection, so that the game can communicate with the server in real-time.
 
-        *   [ ] Task 2.1: Create a `WebSocketService` class/module in `app.js`.
-            *   [ ] Implement a `connect()` method that creates a new WebSocket object.
-                *   [ ] Set the WebSocket URL to `ws://localhost:8080` (configurable later)
-            *   [ ] Implement `onopen`, `onclose`, `onmessage`, `onerror` handlers.
-                *   [ ] Log connection status to the console.
-                *   [ ] Handle connection errors gracefully (retry mechanism).
-            *   [ ] Implement a `send(message)` method that sends data to the server.
-            *   [ ] Implement a `close()` method to close the WebSocket connection.
-        *   [ ] Task 2.2: Implement a retry mechanism for failed connections.
-            *   [ ] Use exponential backoff strategy for retries.
-            *   [ ] Limit the maximum number of retries.
-        *   [ ] Task 2.3: Display connection status to the user (e.g., "Connecting...", "Connected", "Disconnected").
-        *   [ ] Task 2.4: Handle incoming messages from the server and log them to the console.
+        *   [X] Task 2.1: Create a `WebSocketService` class/module in `app.js`.
+            *   [X] Implement a `connect()` method that creates a new WebSocket object.
+                *   [X] Set the WebSocket URL to `ws://localhost:8080` (configurable later)
+            *   [X] Implement `onopen`, `onclose`, `onmessage`, `onerror` handlers.
+                *   [X] Log connection status to the console.
+                *   [X] Handle connection errors gracefully (retry mechanism).
+            *   [X] Implement a `send(message)` method that sends data to the server.
+            *   [X] Implement a `close()` method to close the WebSocket connection.
+        *   [X] Task 2.2: Implement a retry mechanism for failed connections.
+            *   [X] Use exponential backoff strategy for retries.
+            *   [X] Limit the maximum number of retries.
+        *   [X] Task 2.3: Display connection status to the user (e.g., "Connecting...", "Connected", "Disconnected").
+        *   [X] Task 2.4: Handle incoming messages from the server and log them to the console.
 
 **Epic 2: Map and Ship Visualization**
 
@@ -48,38 +48,38 @@ This checklist provides a granular breakdown of each user story into one-story-p
 
     *   US03: As a user, I want to see a 2D map, so that I can orient myself in the tactical environment.
 
-        *   [ ] Task 3.1: Include the OpenLayers library via CDN.
-            *   [ ] Add the necessary `<link>` and `<script>` tags in the HTML.
-        *   [ ] Task 3.2: Create a `MapService` class/module in `app.js`.
-            *   [ ] Implement a `createMap(target)` method that creates a new OpenLayers map.
-                *   [ ] Set the map target to an HTML element with ID "map".
-                *   [ ] Use a default tile layer (e.g., OpenStreetMap).
-                *   [ ] Set the initial view (center coordinates, zoom level).
-            *   [ ] Implement methods to zoom and pan the map.
-        *   [ ] Task 3.3: Create a `div` element with ID "map" in the HTML.
-            *   [ ] Style the map container to fill the viewport.
-        *   [ ] Task 3.4: Initialize the map when the application loads.
-            *   [ ] Call the `createMap()` method from `app.js`.
-        *   [ ] Task 3.5: Ensure smooth zooming and panning.
-            *   [ ] Optimize OpenLayers configuration for performance.
+        *   [X] Task 3.1: Include the OpenLayers library via CDN.
+            *   [X] Add the necessary `<link>` and `<script>` tags in the HTML.
+        *   [X] Task 3.2: Create a `MapService` class/module in `app.js`.
+            *   [X] Implement a `createMap(target)` method that creates a new OpenLayers map.
+                *   [X] Set the map target to an HTML element with ID "map".
+                *   [X] Use a default tile layer (e.g., OpenStreetMap).
+                *   [X] Set the initial view (center coordinates, zoom level).
+            *   [X] Implement methods to zoom and pan the map.
+        *   [X] Task 3.3: Create a `div` element with ID "map" in the HTML.
+            *   [X] Style the map container to fill the viewport.
+        *   [X] Task 3.4: Initialize the map when the application loads.
+            *   [X] Call the `createMap()` method from `app.js`.
+        *   [X] Task 3.5: Ensure smooth zooming and panning.
+            *   [X] Optimize OpenLayers configuration for performance.
 
 *   **Feature: Ship Visualization (Player & AI) (F03)**
 
     *   US04: As a user, I want to see my ship represented on the map, so that I know my position.
 
-        *   [ ] Task 4.1: Create a `ShipService` class/module in `app.js`.
-            *   [ ] Task 4.1.1: Implement a `createShip(coordinates, isPlayer, sidc, properties)` method.
-                *   [ ] Create an OpenLayers feature representing the ship.
-                *   [ ] Use a default SIDC of 'SFGPUCR----K' for the player unit
-                *   [ ] Use the `generateMilStdSymbol()` to create the initial SVG.
-                *   [ ] The `createShip` function must accept `sidc` and other properties as parameters and pass them to the `generateMilStdSymbol` function.
-                *   [ ] Use a simple, distinct color for the player (e.g. blue).
-            *   [ ] Implement a `moveShip(shipFeature, coordinates)` method.
+        *   [X] Task 4.1: Create a `ShipService` class/module in `app.js`.
+            *   [X] Task 4.1.1: Implement a `createShip(coordinates, isPlayer, sidc, properties)` method.
+                *   [X] Create an OpenLayers feature representing the ship.
+                *   [X] Use a default SIDC of 'SFSPN----K' for the player unit
+                *   [X] Use the `generateMilStdSymbol()` to create the initial SVG.
+                *   [X] The `createShip` function must accept `sidc` and other properties as parameters and pass them to the `generateMilStdSymbol` function.
+                *   [X] Use a simple, distinct color for the player (e.g. blue).
+            *   [ ] Task 4.1.2 Implement a `moveShip(shipFeature, coordinates)` method.
                 *   [ ] Handles re-positioning of unit symbol.
-            *   [ ] Implement a `setShipHeading(shipFeature, heading)` method
+            *   [ ] Task 4.1.3 Implement a `setShipHeading(shipFeature, heading)` method
                 *   [ ] Updates internal heading for icon rotation.
                 *   [ ] Re-renders the SVG to update the heading.
-            *   [ ] Implement a method to add ship features to a Vector layer.
+            *   [ ] Task 4.1.4 Implement a method to add ship features to a Vector layer.
                 *   [ ] Must create a vector layer for the `shipFeature` object.
         *   [ ] Task 4.2: Modify the OpenLayers `VectorLayer` to use a custom rendering function for military symbols (MIL-STD-2525D).
             *   [ ] Use the `milSymbolStyle` function.
