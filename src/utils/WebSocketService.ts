@@ -39,13 +39,27 @@ export class WebSocketService {
   private maxReconnectAttempts = 5;
   private reconnectTimeout: number | null = null;
   private listeners: Map<string, ((data: WebSocketEventData) => void)[]> = new Map();
+  private autoReconnect: boolean = true;
 
   /**
    * Constructor
-   * @param url WebSocket URL (defaults to ws://localhost:8080)
+   * @param url WebSocket URL (use deployment environment detection for default)
+   * @param autoReconnect Whether to automatically attempt reconnection
    */
-  constructor(url: string = 'ws://localhost:8080') {
-    this.url = url;
+  constructor(url?: string, autoReconnect: boolean = true) {
+    // Use the browser's location to determine WebSocket URL if not provided
+    if (!url) {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const host = window.location.hostname;
+      // Use the same host but with ws/wss protocol, on port specified in VITE_WS_PORT env or 8080 by default
+      const port = import.meta.env.VITE_WS_PORT || '8080';
+      this.url = `${protocol}//${host}:${port}`;
+    } else {
+      this.url = url;
+    }
+    
+    this.autoReconnect = autoReconnect;
+    console.log(`WebSocketService initialized with URL: ${this.url}`);
   }
 
   /**
@@ -55,6 +69,15 @@ export class WebSocketService {
   public connect(): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
+        // If already connected or connecting, don't try again
+        if (this.socket && (this.socket.readyState === WebSocket.OPEN || this.socket.readyState === WebSocket.CONNECTING)) {
+          resolve();
+          return;
+        }
+
+        console.log(`Connecting to WebSocket at ${this.url}`);
+        this.emit('connectionChange', { status: 'connecting' });
+        
         this.socket = new WebSocket(this.url);
 
         this.socket.onopen = () => {
@@ -67,7 +90,19 @@ export class WebSocketService {
         this.socket.onclose = (event) => {
           console.log(`WebSocket connection closed: ${event.code} ${event.reason}`);
           this.emit('connectionChange', { status: 'disconnected', code: event.code, reason: event.reason });
-          this.attemptReconnect();
+          
+          // Only attempt reconnection if autoReconnect is enabled
+          if (this.autoReconnect) {
+            this.attemptReconnect();
+          } else {
+            this.emit('connectionChange', { 
+              status: 'closed', 
+              code: event.code, 
+              reason: event.reason,
+              permanent: true,
+              message: 'Auto-reconnect is disabled'
+            });
+          }
         };
 
         this.socket.onerror = (error) => {
@@ -212,6 +247,49 @@ export class WebSocketService {
   }
 
   /**
+   * Set a new WebSocket URL
+   * @param url New WebSocket URL
+   */
+  public setUrl(url: string): void {
+    // Only change URL if it's different
+    if (url !== this.url) {
+      const wasConnected = this.isConnected();
+      
+      // Close existing connection if active
+      if (this.socket) {
+        this.close(1000, "URL changed");
+      }
+      
+      // Update URL
+      this.url = url;
+      console.log(`WebSocket URL changed to: ${this.url}`);
+      
+      // Reconnect if was previously connected
+      if (wasConnected) {
+        this.connect().catch(error => {
+          console.error("Failed to reconnect after URL change:", error);
+        });
+      }
+    }
+  }
+
+  /**
+   * Get the current WebSocket URL
+   * @returns The current WebSocket URL
+   */
+  public getUrl(): string {
+    return this.url;
+  }
+
+  /**
+   * Set whether to automatically reconnect
+   * @param autoReconnect Whether to automatically attempt reconnection
+   */
+  public setAutoReconnect(autoReconnect: boolean): void {
+    this.autoReconnect = autoReconnect;
+  }
+
+  /**
    * Attempt to reconnect to the WebSocket server
    * Uses exponential backoff strategy
    */
@@ -219,7 +297,7 @@ export class WebSocketService {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       console.log(`Maximum reconnect attempts (${this.maxReconnectAttempts}) reached`);
       this.emit('connectionChange', { 
-        status: 'disconnected', 
+        status: 'closed', 
         permanent: true, 
         message: `Failed to reconnect after ${this.maxReconnectAttempts} attempts` 
       });
@@ -245,6 +323,6 @@ export class WebSocketService {
   }
 }
 
-// Create a singleton instance
+// Create a singleton instance with auto-detection of URL
 const webSocketService = new WebSocketService();
 export default webSocketService;

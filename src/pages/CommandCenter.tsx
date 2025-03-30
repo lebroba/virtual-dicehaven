@@ -1,19 +1,22 @@
+
 import React, { useState, useEffect, useCallback } from "react";
 import { GameProvider } from "@/context/GameContext";
 import Map from "@/components/Map";
 import Sidebar from "@/components/Sidebar";
 import PixiRenderer from "@/components/PixiRenderer";
 import OpenLayersMap from "@/components/OpenLayersMap";
-import MapControls from "@/components/MapControls"; // Updated import
+import MapControls from "@/components/MapControls";
 import { ConnectionStatusIndicator } from "@/components/ui/ConnectionStatus";
 import webSocketService from "@/utils/WebSocketService";
 import { type Map as OLMap } from 'ol';
 import { fromLonLat } from 'ol/proj';
+import { toast } from "sonner";
 
 const CommandCenter: React.FC = () => {
   const [olMap, setOLMap] = useState<OLMap | null>(null);
   const [mapCenter, setMapCenter] = useState<[number, number]>([30.5, 45.8]);
   const [mapZoom, setMapZoom] = useState<number>(3);
+  const [wsConnected, setWsConnected] = useState<boolean>(false);
 
   const handleMapReady = useCallback((map: OLMap) => {
     console.log("Map is ready");
@@ -23,13 +26,42 @@ const CommandCenter: React.FC = () => {
   useEffect(() => {
     console.log("CommandCenter mounted, olMap:", olMap ? "initialized" : "not initialized");
     
-    // Initialize WebSocket connection
+    // Add connection status listener
+    const handleConnectionChange = (data: any) => {
+      if (data.status === 'connected') {
+        setWsConnected(true);
+      } else {
+        setWsConnected(false);
+      }
+      
+      // Show connection status changes in toast
+      if (data.status === 'disconnected' || data.status === 'closed') {
+        toast.error("WebSocket disconnected", {
+          description: "Server connection lost. Game data will not be synchronized."
+        });
+      } else if (data.status === 'connected') {
+        toast.success("WebSocket connected", {
+          description: "Server connection established. Game data will be synchronized."
+        });
+      }
+    };
+    
+    webSocketService.on('connectionChange', handleConnectionChange);
+    
+    // Initialize WebSocket connection with auto-reconnect disabled after first failure
     webSocketService.connect().catch(error => {
       console.error("Failed to connect to WebSocket server:", error);
+      webSocketService.setAutoReconnect(false);
+      toast.error("Failed to connect to server", {
+        description: "Server might be unavailable. Application will run in offline mode.",
+        duration: 5000
+      });
     });
     
     return () => {
       console.log("CommandCenter unmounted");
+      // Remove connection status listener
+      webSocketService.off('connectionChange', handleConnectionChange);
       // Close WebSocket connection when component unmounts
       webSocketService.close();
     };
