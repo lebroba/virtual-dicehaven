@@ -1,5 +1,6 @@
 // Fix the import path
 import { EventSystem } from "../ecs/EventSystem";
+import { EntityEvent as EcsEntityEvent } from "../ecs/types";
 import { 
   GameState, 
   ShipClass, 
@@ -144,6 +145,17 @@ export class GameEngine {
       ]
     };
     
+    // Convert game entity event to ECS entity event format
+    const adaptEventForEcs = (event: EntityEvent): EcsEntityEvent => {
+      return {
+        type: event.type,
+        sourceEntityId: event.sourceEntityId,
+        targetEntityId: event.targetEntityId,
+        data: event.data,
+        time: Date.now()
+      };
+    };
+    
     // Add to game state entities
     this.gameState.entities.push(ship);
     
@@ -242,12 +254,21 @@ export class GameEngine {
       ship.status = 'combat';
       
       // Create a combat event
-      this.eventBus.dispatchEvent({
+      const event: EntityEvent = {
         type: "cannonFire",
         sourceEntityId: shipId,
         targetEntityId: targetId || "",
         data: { side, ammunition: 10 }
-      } as EntityEvent);
+      };
+      
+      // Convert to ECS format and dispatch
+      this.eventBus.dispatchEvent({
+        type: event.type,
+        sourceEntityId: event.sourceEntityId,
+        targetEntityId: event.targetEntityId,
+        data: event.data,
+        time: Date.now()
+      });
       
       this.notifySubscribers();
     }
@@ -265,12 +286,22 @@ export class GameEngine {
       attacker.status = 'boarding';
       defender.status = 'boarded';
       
-      this.eventBus.dispatchEvent({
+      // Create and dispatch event
+      const event: EntityEvent = {
         type: "boarding",
         sourceEntityId: attackerId,
         targetEntityId: defenderId,
         data: { result: "pending" }
-      } as EntityEvent);
+      };
+      
+      // Convert to ECS format and dispatch
+      this.eventBus.dispatchEvent({
+        type: event.type,
+        sourceEntityId: event.sourceEntityId,
+        targetEntityId: event.targetEntityId,
+        data: event.data,
+        time: Date.now()
+      });
       
       this.notifySubscribers();
     }
@@ -304,11 +335,21 @@ export class GameEngine {
           break;
       }
       
-      this.eventBus.dispatchEvent({
+      // Create and dispatch repair event
+      const event: EntityEvent = {
         type: "repair",
         sourceEntityId: shipId,
         data: { repairType, amount: 10 }
-      } as EntityEvent);
+      };
+      
+      // Convert to ECS format and dispatch
+      this.eventBus.dispatchEvent({
+        type: event.type,
+        sourceEntityId: event.sourceEntityId,
+        targetEntityId: event.targetEntityId,
+        data: event.data,
+        time: Date.now()
+      });
       
       this.notifySubscribers();
     }
@@ -325,14 +366,24 @@ export class GameEngine {
     this.gameState.windDirection = direction;
     this.weather.windDirection = direction;
 
-    this.eventBus.dispatchEvent({
+    // Create and dispatch wind change event
+    const event: EntityEvent = {
       type: "windChange",
       sourceEntityId: "weather-system",
       data: { 
         previousDirection: this.weather.windDirection,
         newDirection: direction 
       }
-    } as EntityEvent);
+    };
+    
+    // Convert to ECS format and dispatch
+    this.eventBus.dispatchEvent({
+      type: event.type,
+      sourceEntityId: event.sourceEntityId,
+      targetEntityId: event.targetEntityId,
+      data: event.data,
+      time: Date.now()
+    });
     
     this.notifySubscribers();
   }
@@ -342,14 +393,24 @@ export class GameEngine {
     this.gameState.windSpeed = speed;
     this.weather.windSpeed = speed;
 
-    this.eventBus.dispatchEvent({
+    // Create and dispatch wind change event
+    const event: EntityEvent = {
       type: "windChange",
       sourceEntityId: "weather-system",
       data: { 
         previousSpeed: this.weather.windSpeed,
         newSpeed: speed 
       }
-    } as EntityEvent);
+    };
+    
+    // Convert to ECS format and dispatch
+    this.eventBus.dispatchEvent({
+      type: event.type,
+      sourceEntityId: event.sourceEntityId,
+      targetEntityId: event.targetEntityId,
+      data: event.data,
+      time: Date.now()
+    });
     
     this.notifySubscribers();
   }
@@ -389,12 +450,22 @@ export class GameEngine {
           break;
       }
       
-      this.eventBus.dispatchEvent({
+      // Create and dispatch damage event
+      const event: EntityEvent = {
         type: "shipDamage",
         sourceEntityId: "combat-system",
         targetEntityId: entityId,
         data: { damageType, amount, isCritical }
-      } as EntityEvent);
+      };
+      
+      // Convert to ECS format and dispatch  
+      this.eventBus.dispatchEvent({
+        type: event.type,
+        sourceEntityId: event.sourceEntityId,
+        targetEntityId: event.targetEntityId,
+        data: event.data,
+        time: Date.now()
+      });
       
       this.notifySubscribers();
     }

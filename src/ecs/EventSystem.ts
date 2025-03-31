@@ -1,120 +1,93 @@
 
-import { EntityId, EntityEvent, EntityEventCallback } from './types';
+import { EntityEvent } from './types';
 
 export class EventSystem {
-  private listeners: Map<string, Map<number, EntityEventCallback>> = new Map();
-  private nextListenerId: number = 1;
-  
-  constructor() {}
-  
+  private listeners: Map<string, ((event: EntityEvent) => void)[]> = new Map();
+
+  constructor() {
+    // Initialize with common event types
+    this.listeners.set('collision', []);
+    this.listeners.set('damage', []);
+    this.listeners.set('destroy', []);
+    this.listeners.set('spawn', []);
+    this.listeners.set('move', []);
+  }
+
   /**
-   * Add an event listener
-   * @returns Listener ID that can be used to remove the listener
+   * Add an event listener for a specific event type
+   * @param eventType Type of event to listen for
+   * @param callback Callback to execute when event is dispatched
+   * @returns Unsubscribe function
    */
-  addEventListener(eventType: string, callback: EntityEventCallback): number {
+  addEventListener(eventType: string, callback: (event: EntityEvent) => void): () => void {
     if (!this.listeners.has(eventType)) {
-      this.listeners.set(eventType, new Map());
+      this.listeners.set(eventType, []);
     }
     
-    const eventListeners = this.listeners.get(eventType)!;
-    const listenerId = this.nextListenerId++;
+    const callbacks = this.listeners.get(eventType)!;
+    callbacks.push(callback);
     
-    eventListeners.set(listenerId, callback);
-    return listenerId;
+    // Return unsubscribe function
+    return () => {
+      const index = callbacks.indexOf(callback);
+      if (index !== -1) {
+        callbacks.splice(index, 1);
+      }
+    };
   }
-  
+
   /**
    * Remove an event listener
+   * @param eventType Type of event
+   * @param callback Callback to remove
    */
-  removeEventListener(eventType: string, listenerId: number): boolean {
-    const eventListeners = this.listeners.get(eventType);
-    
-    if (!eventListeners) {
-      return false;
-    }
-    
-    return eventListeners.delete(listenerId);
-  }
-  
-  /**
-   * Dispatch an event
-   */
-  dispatchEvent(event: EntityEvent): void {
-    const eventListeners = this.listeners.get(event.type);
-    
-    if (!eventListeners) {
+  removeEventListener(eventType: string, callback: (event: EntityEvent) => void): void {
+    if (!this.listeners.has(eventType)) {
       return;
     }
     
-    // Call all listeners
-    for (const callback of eventListeners.values()) {
+    const callbacks = this.listeners.get(eventType)!;
+    const index = callbacks.indexOf(callback);
+    
+    if (index !== -1) {
+      callbacks.splice(index, 1);
+    }
+  }
+
+  /**
+   * Dispatch an event to all registered listeners
+   * @param event Event to dispatch
+   */
+  dispatchEvent(event: EntityEvent): void {
+    if (!this.listeners.has(event.type)) {
+      return;
+    }
+    
+    const callbacks = this.listeners.get(event.type)!;
+    callbacks.forEach(callback => {
       try {
         callback(event);
       } catch (error) {
         console.error(`Error in event listener for ${event.type}:`, error);
       }
-    }
-  }
-  
-  /**
-   * Dispatch an event from a source entity to a target entity
-   */
-  sendEvent(
-    eventType: string,
-    sourceEntityId: EntityId,
-    targetEntityId: EntityId,
-    data: any = {}
-  ): void {
-    this.dispatchEvent({
-      type: eventType,
-      sourceEntityId,
-      targetEntityId,
-      data
     });
   }
-  
-  /**
-   * Broadcast an event from a source entity to all entities
-   */
-  broadcastEvent(
-    eventType: string,
-    sourceEntityId: EntityId,
-    data: any = {}
-  ): void {
-    this.dispatchEvent({
-      type: eventType,
-      sourceEntityId,
-      data
-    });
-  }
-  
-  /**
-   * Check if an event type has any listeners
-   */
-  hasListeners(eventType: string): boolean {
-    const eventListeners = this.listeners.get(eventType);
-    return !!eventListeners && eventListeners.size > 0;
-  }
-  
-  /**
-   * Get the number of listeners for an event type
-   */
-  listenerCount(eventType: string): number {
-    const eventListeners = this.listeners.get(eventType);
-    return eventListeners ? eventListeners.size : 0;
-  }
-  
-  /**
-   * Remove all listeners for an event type
-   */
-  removeAllListeners(eventType: string): void {
-    this.listeners.delete(eventType);
-  }
-  
+
   /**
    * Clear all event listeners
    */
-  clearAllListeners(): void {
+  clearEventListeners(): void {
     this.listeners.clear();
+  }
+
+  /**
+   * Get count of listeners for a specific event type
+   * @param eventType Type of event
+   */
+  getListenerCount(eventType: string): number {
+    if (!this.listeners.has(eventType)) {
+      return 0;
+    }
+    return this.listeners.get(eventType)!.length;
   }
 }

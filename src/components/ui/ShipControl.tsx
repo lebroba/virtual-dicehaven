@@ -427,15 +427,15 @@ export const ShipControl: React.FC<ShipControlProps> = ({
             <div className="space-y-1">
               <div className="flex justify-between text-sm">
                 <span>Rigging Status</span>
-                <span className={getDamageColor(100 - ship.damageState.rigDamage)}>
-                  {Math.round(100 - ship.damageState.rigDamage)}%
+                <span className={getDamageColor(100 - ship.damageState.riggingDamage)}>
+                  {Math.round(100 - ship.damageState.riggingDamage)}%
                 </span>
               </div>
               <Progress 
-                value={100 - ship.damageState.rigDamage} 
+                value={100 - ship.damageState.riggingDamage} 
                 className="h-2"
-                indicatorClassName={(100 - ship.damageState.rigDamage) > 70 ? "bg-green-500" : 
-                                   (100 - ship.damageState.rigDamage) > 40 ? "bg-yellow-500" : "bg-red-500"}
+                indicatorClassName={(100 - ship.damageState.riggingDamage) > 70 ? "bg-green-500" : 
+                                   (100 - ship.damageState.riggingDamage) > 40 ? "bg-yellow-500" : "bg-red-500"}
               />
               <div className="flex justify-end">
                 <Button 
