@@ -1,175 +1,90 @@
 
 import { System } from '../types';
-import { PositionComponent, VelocityComponent, RotationComponent } from '../components/common';
-import { ShipComponent } from '../components/ship';
+import { PositionComponent, VelocityComponent, RotationComponent } from '../types';
+import { ShipComponent } from '../types';
 
 /**
- * ShipMovementSystem handles ship movement based on sail configuration and wind
+ * ShipMovementSystem handles ship specific movement mechanics
  */
-export function createShipMovementSystem(
-  getWindDirection: () => number, 
-  getWindSpeed: () => number
-): System {
+export function createShipMovementSystem(): System {
   return {
     name: 'shipMovement',
     priority: 'high',
     enabled: true,
+    dependencies: ['movement'], // Run after the basic movement system
     execute: (deltaTime, entities) => {
-      // Current wind conditions
-      const windDirection = getWindDirection(); // 0-359 degrees
-      const windSpeed = getWindSpeed(); // in knots
-      
-      // Find entities with ship, position, velocity, and rotation components
+      // Find ship entities with position and velocity
       const shipEntities = entities.filter(entity => {
         return entity.active && 
-               entity.components.has('ship') && 
+               entity.components.has('ship') &&
                entity.components.has('position') && 
-               entity.components.has('velocity') && 
-               entity.components.has('rotation');
+               entity.components.has('velocity');
       });
       
-      // Update each ship's velocity based on its sail configuration and the wind
+      // Process each ship
       shipEntities.forEach(entity => {
         const ship = entity.components.get('ship') as ShipComponent;
         const position = entity.components.get('position') as PositionComponent;
         const velocity = entity.components.get('velocity') as VelocityComponent;
-        const rotation = entity.components.get('rotation') as RotationComponent;
+        const rotation = entity.components.get('rotation') as RotationComponent | undefined;
         
-        // Skip if any required component is disabled
-        if (!ship.enabled || !position.enabled || !velocity.enabled || !rotation.enabled) {
+        // Skip if components are disabled
+        if (ship.enabled === false || position.enabled === false || velocity.enabled === false) {
           return;
         }
         
-        // Calculate sail effectiveness based on configuration and damage
-        const sailEffect = calculateSailEffectiveness(ship);
-        if (sailEffect === 0) {
-          // No sails deployed or all masts damaged
-          velocity.vx = 0;
-          velocity.vy = 0;
-          ship.speed.current = 0;
-          return;
+        // Calculate ship physics based on sail configuration, damage, etc.
+        let speedFactor = 0;
+        
+        // Calculate speed factor based on sail configuration
+        switch(ship.sails.configuration) {
+          case 'full':
+            speedFactor = 1.0;
+            break;
+          case 'battle':
+            speedFactor = 0.7;
+            break;
+          case 'reduced':
+            speedFactor = 0.4;
+            break;
+          case 'minimal':
+            speedFactor = 0.2;
+            break;
+          case 'none':
+            speedFactor = 0;
+            break;
         }
         
-        // Calculate the angle between wind direction and ship's heading
-        const relativeWindAngle = calculateRelativeAngle(windDirection, rotation.angle);
+        // Apply sail damage reduction
+        const riggingDamage = Math.min(ship.damage.rigging, 100) / 100;
+        speedFactor *= (1 - riggingDamage * 0.8);
         
-        // Calculate wind effectiveness based on relative angle
-        const windEffect = calculateWindEffect(relativeWindAngle);
+        // Apply hull damage reduction
+        const hullDamage = Math.min(ship.damage.hull, 100) / 100;
+        speedFactor *= (1 - hullDamage * 0.3);
         
-        // Calculate rudder effectiveness based on damage
-        const rudderEffect = 1 - (ship.damage.rudder / 100);
+        // Apply rudder damage reduction to turning
+        const rudderDamage = Math.min(ship.damage.rudder, 100) / 100;
+        let turnFactor = 1 - rudderDamage * 0.9;
         
-        // Calculate ship's speed
-        const baseSpeed = ship.speed.max * sailEffect * windEffect * (windSpeed / 20);
+        // Adjust ship's current speed based on all factors
+        const targetSpeed = ship.speed.max * speedFactor;
         
-        // Apply crew efficiency factor
-        const crewEfficiency = ship.crew.current / ship.crew.max;
-        ship.speed.current = baseSpeed * Math.max(0.3, crewEfficiency);
+        // Gradually adjust current speed toward target speed
+        if (ship.speed.current < targetSpeed) {
+          ship.speed.current = Math.min(ship.speed.current + deltaTime * 0.5, targetSpeed);
+        } else if (ship.speed.current > targetSpeed) {
+          ship.speed.current = Math.max(ship.speed.current - deltaTime * 0.8, targetSpeed);
+        }
         
-        // Convert ship's heading to radians
-        const headingRad = (rotation.angle * Math.PI) / 180;
-        
-        // Calculate velocity components
-        velocity.vx = Math.sin(headingRad) * ship.speed.current;
-        velocity.vy = -Math.cos(headingRad) * ship.speed.current;
+        // Apply rotation if available
+        if (rotation) {
+          // Calculate velocity based on ship's rotation and speed
+          const radians = rotation.angle * Math.PI / 180;
+          velocity.vx = Math.sin(radians) * ship.speed.current;
+          velocity.vy = -Math.cos(radians) * ship.speed.current;
+        }
       });
     }
   };
-}
-
-/**
- * Calculate sail effectiveness based on configuration and damage
- * @param ship Ship component
- * @returns Sail effectiveness (0-1)
- */
-function calculateSailEffectiveness(ship: ShipComponent): number {
-  // Check sail configuration
-  let configFactor;
-  switch (ship.sails.configuration) {
-    case 'full':
-      configFactor = 1.0;
-      break;
-    case 'battle':
-      configFactor = 0.7;
-      break;
-    case 'reduced':
-      configFactor = 0.5;
-      break;
-    case 'minimal':
-      configFactor = 0.3;
-      break;
-    case 'none':
-      return 0;
-    default:
-      configFactor = 0;
-  }
-  
-  // Calculate deployed sail percentage
-  const deployedSails = (
-    ship.sails.mainSails +
-    ship.sails.topSails +
-    ship.sails.jibs +
-    ship.sails.spanker
-  ) / 400; // Average of all sail types
-  
-  // Apply mast damage penalties
-  const mastDamage = (
-    ship.damage.masts.fore +
-    ship.damage.masts.main +
-    ship.damage.masts.mizzen
-  ) / 300; // Average mast damage
-  
-  // Apply rigging damage penalty
-  const riggingFactor = 1 - (ship.damage.rigging / 100);
-  
-  return configFactor * deployedSails * (1 - mastDamage) * riggingFactor;
-}
-
-/**
- * Calculate the relative angle between wind and ship heading
- * @param windDirection Wind direction in degrees (0-359)
- * @param shipHeading Ship heading in degrees (0-359)
- * @returns Relative angle in degrees (0-180)
- */
-function calculateRelativeAngle(windDirection: number, shipHeading: number): number {
-  // Normalize both angles
-  const normalizedWind = ((windDirection % 360) + 360) % 360;
-  const normalizedHeading = ((shipHeading % 360) + 360) % 360;
-  
-  // Calculate absolute difference
-  let diff = Math.abs(normalizedWind - normalizedHeading);
-  
-  // Ensure the shortest angle
-  if (diff > 180) {
-    diff = 360 - diff;
-  }
-  
-  return diff;
-}
-
-/**
- * Calculate wind effectiveness based on relative angle
- * Ships sail fastest with wind at 90-120 degrees to heading
- * Ships can't sail directly into the wind (within ~45 degrees)
- * @param relativeAngle Relative angle in degrees (0-180)
- * @returns Wind effectiveness factor (0-1)
- */
-function calculateWindEffect(relativeAngle: number): number {
-  // Dead into the wind (irons) - minimal movement
-  if (relativeAngle < 45) {
-    return 0.1;
-  }
-  
-  // Close hauled (45-75 degrees) - increasing effectiveness
-  if (relativeAngle < 75) {
-    return 0.3 + (relativeAngle - 45) * 0.01;
-  }
-  
-  // Beam reach / broad reach (75-150 degrees) - optimal sailing
-  if (relativeAngle < 150) {
-    return 0.6 + (relativeAngle - 75) * 0.005;
-  }
-  
-  // Running (150-180 degrees) - good but not optimal
-  return 1.0 - (relativeAngle - 150) * 0.005;
 }

@@ -1,6 +1,6 @@
 
 import { System } from '../types';
-import { HealthComponent } from '../components/common';
+import { HealthComponent } from '../types';
 import { ecs } from '../ECS';
 
 /**
@@ -22,7 +22,7 @@ export function createHealthSystem(): System {
         const health = entity.components.get('health') as HealthComponent;
         
         // Skip if component is disabled or entity is invincible
-        if (!health.enabled || health.invincible) return;
+        if (health.enabled === false || health.invincible) return;
         
         // Handle regeneration
         if (health.regeneration > 0 && health.current < health.max) {

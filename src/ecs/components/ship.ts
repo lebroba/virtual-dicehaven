@@ -1,3 +1,4 @@
+
 import { EntityId, ShipComponent } from '../types';
 
 /**
@@ -173,3 +174,6 @@ export function createShipComponent(
     enabled: options.enabled !== undefined ? options.enabled : true
   };
 }
+
+// Export the component type for use in type checking
+export { ShipComponent };

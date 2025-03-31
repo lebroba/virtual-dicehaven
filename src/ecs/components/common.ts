@@ -206,3 +206,6 @@ export function createHealthComponent(
     enabled: options.enabled !== undefined ? options.enabled : true
   };
 }
+
+// Export the component types for use in type checking
+export { PositionComponent, VelocityComponent, RotationComponent, ScaleComponent, RenderableComponent, ColliderComponent, HealthComponent };

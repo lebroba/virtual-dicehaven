@@ -1,83 +1,52 @@
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { ecs } from '../ECS';
-import { System, SystemPriority, SystemPerformanceMetrics } from '../types';
+import { System } from '../types';
 
 /**
- * React hook for managing a system
- * @param name System name
- * @param executeFn System execute function
- * @param options Additional system options
- * @returns Object with system and methods to manipulate it
+ * React hook for managing a system in the ECS
  */
 export function useSystem(
-  name: string,
-  executeFn: System['execute'],
-  options: {
-    priority?: SystemPriority;
-    enabled?: boolean;
-    executeBeforeUpdate?: () => void;
-    executeAfterUpdate?: () => void;
-    dependencies?: string[];
-    autoRemove?: boolean;
-  } = {}
+  system: System,
+  autoEnable: boolean = true
 ): {
-  isRegistered: boolean;
-  isEnabled: boolean;
-  setEnabled: (enabled: boolean) => void;
-  getPerformanceMetrics: () => SystemPerformanceMetrics | null;
+  enableSystem: () => void;
+  disableSystem: () => void;
+  isEnabled: () => boolean;
 } {
-  const [isRegistered, setIsRegistered] = useState(false);
-  const [isEnabled, setIsEnabledState] = useState(options.enabled ?? true);
-  
-  // Register system on mount
   useEffect(() => {
-    const systemExists = ecs.getSystem(name) !== null;
+    // Add system to the ECS
+    ecs.addSystem(system);
     
-    if (!systemExists) {
-      const system: System = {
-        name,
-        execute: executeFn,
-        priority: options.priority ?? 'medium',
-        enabled: options.enabled ?? true,
-        executeBeforeUpdate: options.executeBeforeUpdate,
-        executeAfterUpdate: options.executeAfterUpdate,
-        dependencies: options.dependencies
-      };
-      
-      const registered = ecs.addSystem(system);
-      setIsRegistered(registered);
+    // Automatically enable/disable based on prop
+    if (autoEnable) {
+      ecs.enableSystem(system.name);
     } else {
-      setIsRegistered(true);
-      const system = ecs.getSystem(name);
-      setIsEnabledState(system?.enabled ?? false);
+      ecs.disableSystem(system.name);
     }
     
-    // Cleanup when component unmounts
+    // Remove system when component unmounts
     return () => {
-      if (options.autoRemove !== false) {
-        ecs.removeSystem(name);
-      }
+      ecs.removeSystem(system.name);
     };
-  }, [name, executeFn, options.priority, options.dependencies, options.autoRemove]);
+  }, []); // Empty dependency array to ensure this only runs once
   
-  // Set enabled state
-  const setEnabled = (enabled: boolean) => {
-    const system = ecs.setSystemEnabled(name, enabled);
-    if (system) {
-      setIsEnabledState(system.enabled);
-    }
+  const enableSystem = () => {
+    ecs.enableSystem(system.name);
   };
   
-  // Get performance metrics
-  const getPerformanceMetrics = () => {
-    return ecs.getSystemPerformanceMetrics(name);
+  const disableSystem = () => {
+    ecs.disableSystem(system.name);
+  };
+  
+  const isEnabled = () => {
+    const systemInstance = ecs.getSystem(system.name);
+    return systemInstance ? systemInstance.enabled : false;
   };
   
   return {
-    isRegistered,
-    isEnabled,
-    setEnabled,
-    getPerformanceMetrics
+    enableSystem,
+    disableSystem,
+    isEnabled
   };
 }

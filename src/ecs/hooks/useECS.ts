@@ -9,7 +9,7 @@ import { Entity, System, Component, EntityId, EntityQuery, SystemPerformanceMetr
 export function useECS(): {
   ecs: ECS;
   createEntity: () => Entity;
-  addComponent: (entityId: EntityId, component: Component) => Entity | null;
+  addComponent: (entityId: EntityId, component: Component) => Entity | undefined;
   removeEntity: (entityId: EntityId) => boolean;
   queryEntities: (query: EntityQuery) => Entity[];
   addSystem: (system: System) => boolean;
@@ -37,8 +37,10 @@ export function useECS(): {
   // Helper methods that wrap the ECS API
   const createEntity = () => ecs.createEntity();
   
-  const addComponent = (entityId: EntityId, component: Component) => 
-    ecs.addComponent(entityId, component);
+  const addComponent = (entityId: EntityId, component: Component) => {
+    const success = ecs.addComponent(entityId, component);
+    return success ? ecs.getEntity(entityId) : undefined;
+  }
   
   const removeEntity = (entityId: EntityId) => 
     ecs.removeEntity(entityId);

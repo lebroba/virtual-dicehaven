@@ -1,6 +1,6 @@
 
 import { System } from '../types';
-import { PositionComponent, VelocityComponent } from '../components/common';
+import { PositionComponent, VelocityComponent } from '../types';
 
 /**
  * MovementSystem updates positions based on velocities
@@ -24,7 +24,7 @@ export function createMovementSystem(): System {
         const velocity = entity.components.get('velocity') as VelocityComponent;
         
         // Skip if either component is disabled
-        if (!position.enabled || !velocity.enabled) return;
+        if (position.enabled === false || velocity.enabled === false) return;
         
         // Update position based on velocity and deltaTime
         position.x += velocity.vx * deltaTime;

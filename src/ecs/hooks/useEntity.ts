@@ -1,134 +1,111 @@
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { ecs } from '../ECS';
-import { Entity, EntityId, Component, ComponentType } from '../types';
+import { Component, Entity, EntityId } from '../types';
 
 /**
- * React hook for managing a specific entity
- * @param initialEntityId Optional entity ID to track, if not provided a new entity will be created
- * @param autoRemove If true, the entity will be removed when the component unmounts
- * @returns Object with entity and methods to manipulate it
+ * React hook for managing a single entity
  */
-export function useEntity(initialEntityId?: EntityId, autoRemove: boolean = true): {
+export function useEntity(
+  initialTags: string[] = [],
+  initialComponents: Component[] = []
+): {
   entity: Entity | null;
-  addComponent: <T extends Component>(component: T) => Entity | null;
-  removeComponent: (componentType: ComponentType) => boolean;
-  getComponent: <T extends Component>(componentType: ComponentType) => T | null;
-  hasComponent: (componentType: ComponentType) => boolean;
-  addTag: (tag: string) => Entity | null;
-  removeTag: (tag: string) => boolean;
+  entityId: EntityId | null;
+  addComponent: (component: Component) => void;
+  removeComponent: (componentType: string) => void;
+  getComponent: <T extends Component>(componentType: string) => T | undefined;
+  hasComponent: (componentType: string) => boolean;
+  addTag: (tag: string) => void;
+  removeTag: (tag: string) => void;
   hasTag: (tag: string) => boolean;
-  setActive: (active: boolean) => Entity | null;
-  isActive: () => boolean;
+  setActive: (active: boolean) => void;
 } {
-  const [entityId, setEntityId] = useState<EntityId | undefined>(initialEntityId);
   const [entity, setEntity] = useState<Entity | null>(null);
   
-  // Initialize entity
+  // Create entity on first render
   useEffect(() => {
-    let currentEntity: Entity | null = null;
+    // Create entity with initial tags
+    const newEntity = ecs.createEntity(initialTags);
     
-    if (entityId !== undefined) {
-      // Try to get existing entity
-      currentEntity = ecs.getEntity(entityId);
-    } else {
-      // Create new entity
-      currentEntity = ecs.createEntity();
-      setEntityId(currentEntity.id);
-    }
+    // Add initial components
+    initialComponents.forEach(component => {
+      ecs.addComponent(newEntity.id, component);
+    });
     
-    setEntity(currentEntity);
+    setEntity(newEntity);
     
-    // Cleanup when component unmounts
+    // Clean up entity when component unmounts
     return () => {
-      if (autoRemove && currentEntity) {
-        ecs.removeEntity(currentEntity.id);
+      if (newEntity) {
+        ecs.removeEntity(newEntity.id);
       }
     };
-  }, [entityId, autoRemove]);
+  }, []); // Empty dependency array ensures this only runs once
   
-  // Helper methods
-  const addComponent = <T extends Component>(component: T): Entity | null => {
-    if (!entity) return null;
-    
-    const updatedEntity = ecs.addComponent(entity.id, component);
-    if (updatedEntity) {
-      setEntity(updatedEntity);
+  const entityId = entity?.id || null;
+  
+  // Component operations
+  const addComponent = (component: Component) => {
+    if (entity) {
+      ecs.addComponent(entity.id, component);
+      // Update local entity reference
+      setEntity(ecs.getEntity(entity.id) || null);
     }
-    
-    return updatedEntity;
   };
   
-  const removeComponent = (componentType: ComponentType): boolean => {
-    if (!entity) return false;
-    
-    const result = ecs.removeComponent(entity.id, componentType);
-    if (result) {
-      // Refresh entity
-      setEntity(ecs.getEntity(entity.id));
+  const removeComponent = (componentType: string) => {
+    if (entity) {
+      ecs.removeComponent(entity.id, componentType);
+      // Update local entity reference
+      setEntity(ecs.getEntity(entity.id) || null);
     }
-    
-    return result;
   };
   
-  const getComponent = <T extends Component>(componentType: ComponentType): T | null => {
-    if (!entity) return null;
-    
+  const getComponent = <T extends Component>(componentType: string): T | undefined => {
+    if (!entity) return undefined;
     return ecs.getComponent<T>(entity.id, componentType);
   };
   
-  const hasComponent = (componentType: ComponentType): boolean => {
+  const hasComponent = (componentType: string): boolean => {
     if (!entity) return false;
-    
     return ecs.hasComponent(entity.id, componentType);
   };
   
-  const addTag = (tag: string): Entity | null => {
-    if (!entity) return null;
-    
-    const updatedEntity = ecs.addTag(entity.id, tag);
-    if (updatedEntity) {
-      setEntity(updatedEntity);
+  // Tag operations
+  const addTag = (tag: string) => {
+    if (entity) {
+      ecs.addTag(entity.id, tag);
+      // Update local entity reference
+      setEntity(ecs.getEntity(entity.id) || null);
     }
-    
-    return updatedEntity;
   };
   
-  const removeTag = (tag: string): boolean => {
-    if (!entity) return false;
-    
-    const result = ecs.removeTag(entity.id, tag);
-    if (result) {
-      // Refresh entity
-      setEntity(ecs.getEntity(entity.id));
+  const removeTag = (tag: string) => {
+    if (entity) {
+      ecs.removeTag(entity.id, tag);
+      // Update local entity reference
+      setEntity(ecs.getEntity(entity.id) || null);
     }
-    
-    return result;
   };
   
   const hasTag = (tag: string): boolean => {
     if (!entity) return false;
-    
     return ecs.hasTag(entity.id, tag);
   };
   
-  const setActive = (active: boolean): Entity | null => {
-    if (!entity) return null;
-    
-    const updatedEntity = ecs.setEntityActive(entity.id, active);
-    if (updatedEntity) {
-      setEntity(updatedEntity);
+  // Set active state
+  const setActive = (active: boolean) => {
+    if (entity) {
+      ecs.setEntityActive(entity.id, active);
+      // Update local entity reference
+      setEntity(ecs.getEntity(entity.id) || null);
     }
-    
-    return updatedEntity;
-  };
-  
-  const isActive = (): boolean => {
-    return entity?.active ?? false;
   };
   
   return {
     entity,
+    entityId,
     addComponent,
     removeComponent,
     getComponent,
@@ -136,7 +113,6 @@ export function useEntity(initialEntityId?: EntityId, autoRemove: boolean = true
     addTag,
     removeTag,
     hasTag,
-    setActive,
-    isActive
+    setActive
   };
 }
