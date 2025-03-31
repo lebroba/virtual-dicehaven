@@ -1,52 +1,69 @@
 
-import { useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { ecs } from '../ECS';
 import { System } from '../types';
 
 /**
- * React hook for managing a system in the ECS
+ * Hook for manipulating a specific system
  */
-export function useSystem(
-  system: System,
-  autoEnable: boolean = true
-): {
-  enableSystem: () => void;
-  disableSystem: () => void;
-  isEnabled: () => boolean;
-} {
-  useEffect(() => {
-    // Add system to the ECS
-    ecs.addSystem(system);
+export const useSystem = (systemName: string) => {
+  const [isEnabled, setIsEnabled] = useState<boolean>(false);
+  
+  /**
+   * Toggle system enabled/disabled
+   */
+  const toggleEnabled = useCallback(() => {
+    const system = ecs.getSystem(systemName);
     
-    // Automatically enable/disable based on prop
-    if (autoEnable) {
-      ecs.enableSystem(system.name);
-    } else {
-      ecs.disableSystem(system.name);
+    if (system) {
+      if (system.enabled) {
+        ecs.setSystemEnabled(systemName, false);
+      } else {
+        ecs.setSystemEnabled(systemName, true);
+      }
+      setIsEnabled(!system.enabled);
     }
-    
-    // Remove system when component unmounts
-    return () => {
-      ecs.removeSystem(system.name);
-    };
-  }, []); // Empty dependency array to ensure this only runs once
+  }, [systemName]);
   
-  const enableSystem = () => {
-    ecs.enableSystem(system.name);
-  };
+  /**
+   * Enable the system
+   */
+  const enable = useCallback(() => {
+    const result = ecs.setSystemEnabled(systemName, true);
+    if (result) setIsEnabled(true);
+    return result;
+  }, [systemName]);
   
-  const disableSystem = () => {
-    ecs.disableSystem(system.name);
-  };
+  /**
+   * Disable the system
+   */
+  const disable = useCallback(() => {
+    const result = ecs.setSystemEnabled(systemName, false);
+    if (result) setIsEnabled(false);
+    return result;
+  }, [systemName]);
   
-  const isEnabled = () => {
-    const systemInstance = ecs.getSystem(system.name);
-    return systemInstance ? systemInstance.enabled : false;
-  };
+  /**
+   * Get the system
+   */
+  const getSystem = useCallback((): System | undefined => {
+    return ecs.getSystem(systemName);
+  }, [systemName]);
+  
+  // Initialize the enabled state
+  useEffect(() => {
+    const system = ecs.getSystem(systemName);
+    if (system) {
+      setIsEnabled(system.enabled);
+    }
+  }, [systemName]);
   
   return {
-    enableSystem,
-    disableSystem,
-    isEnabled
+    systemName,
+    isEnabled,
+    toggleEnabled,
+    enable,
+    disable,
+    getSystem
   };
-}
+};

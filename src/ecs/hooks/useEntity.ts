@@ -1,118 +1,96 @@
 
-import { useEffect, useState } from 'react';
+import { useCallback } from 'react';
 import { ecs } from '../ECS';
-import { Component, Entity, EntityId } from '../types';
+import { Entity, Component } from '../types';
 
 /**
- * React hook for managing a single entity
+ * Hook for manipulating a specific entity
  */
-export function useEntity(
-  initialTags: string[] = [],
-  initialComponents: Component[] = []
-): {
-  entity: Entity | null;
-  entityId: EntityId | null;
-  addComponent: (component: Component) => void;
-  removeComponent: (componentType: string) => void;
-  getComponent: <T extends Component>(componentType: string) => T | undefined;
-  hasComponent: (componentType: string) => boolean;
-  addTag: (tag: string) => void;
-  removeTag: (tag: string) => void;
-  hasTag: (tag: string) => boolean;
-  setActive: (active: boolean) => void;
-} {
-  const [entity, setEntity] = useState<Entity | null>(null);
+export const useEntity = (entityId: number) => {
+  /**
+   * Add a component to the entity
+   */
+  const addComponent = useCallback((component: Component) => {
+    return ecs.addComponent(entityId, component);
+  }, [entityId]);
   
-  // Create entity on first render
-  useEffect(() => {
-    // Create entity with initial tags
-    const newEntity = ecs.createEntity(initialTags);
-    
-    // Add initial components
-    initialComponents.forEach(component => {
-      ecs.addComponent(newEntity.id, component);
-    });
-    
-    setEntity(newEntity);
-    
-    // Clean up entity when component unmounts
-    return () => {
-      if (newEntity) {
-        ecs.removeEntity(newEntity.id);
-      }
-    };
-  }, []); // Empty dependency array ensures this only runs once
+  /**
+   * Remove a component from the entity
+   */
+  const removeComponent = useCallback((componentType: string) => {
+    return ecs.removeComponent(entityId, componentType);
+  }, [entityId]);
   
-  const entityId = entity?.id || null;
+  /**
+   * Get a component from the entity
+   */
+  const getComponent = useCallback(<T extends Component>(componentType: string): T | undefined => {
+    return ecs.getComponent<T>(entityId, componentType);
+  }, [entityId]);
   
-  // Component operations
-  const addComponent = (component: Component) => {
-    if (entity) {
-      ecs.addComponent(entity.id, component);
-      // Update local entity reference
-      setEntity(ecs.getEntity(entity.id) || null);
-    }
-  };
+  /**
+   * Check if entity exists
+   */
+  const entityExists = useCallback((): boolean => {
+    return ecs.getEntity(entityId) !== undefined;
+  }, [entityId]);
   
-  const removeComponent = (componentType: string) => {
-    if (entity) {
-      ecs.removeComponent(entity.id, componentType);
-      // Update local entity reference
-      setEntity(ecs.getEntity(entity.id) || null);
-    }
-  };
+  /**
+   * Get the entity
+   */
+  const getEntity = useCallback((): Entity | undefined => {
+    return ecs.getEntity(entityId);
+  }, [entityId]);
   
-  const getComponent = <T extends Component>(componentType: string): T | undefined => {
-    if (!entity) return undefined;
-    return ecs.getComponent<T>(entity.id, componentType);
-  };
+  /**
+   * Check if entity has a component
+   */
+  const hasComponent = useCallback((componentType: string): boolean => {
+    return ecs.hasComponent(entityId, componentType);
+  }, [entityId]);
   
-  const hasComponent = (componentType: string): boolean => {
-    if (!entity) return false;
-    return ecs.hasComponent(entity.id, componentType);
-  };
+  /**
+   * Add a tag to the entity
+   */
+  const addTag = useCallback((tag: string) => {
+    ecs.addTag(entityId, tag);
+    return ecs.getEntity(entityId) !== undefined;
+  }, [entityId]);
   
-  // Tag operations
-  const addTag = (tag: string) => {
-    if (entity) {
-      ecs.addTag(entity.id, tag);
-      // Update local entity reference
-      setEntity(ecs.getEntity(entity.id) || null);
-    }
-  };
+  /**
+   * Remove a tag from the entity
+   */
+  const removeTag = useCallback((tag: string) => {
+    ecs.removeTag(entityId, tag);
+    return ecs.getEntity(entityId) !== undefined;
+  }, [entityId]);
   
-  const removeTag = (tag: string) => {
-    if (entity) {
-      ecs.removeTag(entity.id, tag);
-      // Update local entity reference
-      setEntity(ecs.getEntity(entity.id) || null);
-    }
-  };
+  /**
+   * Check if entity has a tag
+   */
+  const hasTag = useCallback((tag: string): boolean => {
+    return ecs.hasTag(entityId, tag);
+  }, [entityId]);
   
-  const hasTag = (tag: string): boolean => {
-    if (!entity) return false;
-    return ecs.hasTag(entity.id, tag);
-  };
-  
-  // Set active state
-  const setActive = (active: boolean) => {
-    if (entity) {
-      ecs.setEntityActive(entity.id, active);
-      // Update local entity reference
-      setEntity(ecs.getEntity(entity.id) || null);
-    }
-  };
+  /**
+   * Set entity active state
+   */
+  const setActive = useCallback((active: boolean) => {
+    ecs.setEntityActive(entityId, active);
+    return ecs.getEntity(entityId) !== undefined;
+  }, [entityId]);
   
   return {
-    entity,
     entityId,
     addComponent,
     removeComponent,
     getComponent,
     hasComponent,
+    entityExists,
+    getEntity,
     addTag,
     removeTag,
     hasTag,
     setActive
   };
-}
+};

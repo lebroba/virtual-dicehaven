@@ -1,79 +1,133 @@
 
-import { useEffect, useState } from 'react';
-import { ecs, ECS } from '../ECS';
-import { Entity, System, Component, EntityId, EntityQuery, SystemPerformanceMetrics } from '../types';
+import { useState, useEffect, useCallback } from 'react';
+import { ecs } from '../ECS';
+import { Entity, Component, System, SystemPerformanceMetrics } from '../types';
 
 /**
- * React hook for using the ECS system in components
+ * Hook for accessing the ECS system
  */
-export function useECS(): {
-  ecs: ECS;
-  createEntity: () => Entity;
-  addComponent: (entityId: EntityId, component: Component) => Entity | undefined;
-  removeEntity: (entityId: EntityId) => boolean;
-  queryEntities: (query: EntityQuery) => Entity[];
-  addSystem: (system: System) => boolean;
-  removeSystem: (systemName: string) => boolean;
-  startECS: () => void;
-  stopECS: () => void;
-  resetECS: () => void;
-  getPerformanceMetrics: () => SystemPerformanceMetrics[];
-} {
-  const [isInitialized, setIsInitialized] = useState(false);
+export const useECS = () => {
+  const [isRunning, setIsRunning] = useState<boolean>(false);
+  const [entities, setEntities] = useState<Entity[]>([]);
+  const [performanceMetrics, setPerformanceMetrics] = useState<SystemPerformanceMetrics[]>([]);
   
-  // Initialize ECS on first render
-  useEffect(() => {
-    if (!isInitialized) {
-      setIsInitialized(true);
+  // Start the ECS
+  const startECS = useCallback(() => {
+    ecs.start();
+    setIsRunning(true);
+  }, []);
+  
+  // Stop the ECS
+  const stopECS = useCallback(() => {
+    ecs.stop();
+    setIsRunning(false);
+  }, []);
+  
+  // Create a new entity
+  const createEntity = useCallback(() => {
+    const entity = ecs.createEntity();
+    setEntities([...ecs.queryEntities({ active: true })]);
+    return entity;
+  }, []);
+  
+  // Remove an entity
+  const removeEntity = useCallback((entityId: number) => {
+    const result = ecs.removeEntity(entityId);
+    if (result) {
+      setEntities([...ecs.queryEntities({ active: true })]);
     }
-    
-    // Cleanup when component unmounts
-    return () => {
-      // Don't automatically stop ECS as other components might be using it
-      // Individual components should manage their own systems
-    };
-  }, [isInitialized]);
+    return result;
+  }, []);
   
-  // Helper methods that wrap the ECS API
-  const createEntity = () => ecs.createEntity();
+  // Get entity by ID
+  const getEntity = useCallback((entityId: number) => {
+    return ecs.getEntity(entityId);
+  }, []);
   
-  const addComponent = (entityId: EntityId, component: Component) => {
-    const success = ecs.addComponent(entityId, component);
-    return success ? ecs.getEntity(entityId) : undefined;
-  }
+  // Add a component to an entity
+  const addComponent = useCallback((entityId: number, component: Component) => {
+    const result = ecs.addComponent(entityId, component);
+    if (result) {
+      setEntities([...ecs.queryEntities({ active: true })]);
+    }
+    return result;
+  }, []);
   
-  const removeEntity = (entityId: EntityId) => 
-    ecs.removeEntity(entityId);
+  // Reset the ECS
+  const resetECS = useCallback(() => {
+    ecs.reset();
+    setEntities([]);
+    setPerformanceMetrics([]);
+    setIsRunning(false);
+  }, []);
   
-  const queryEntities = (query: EntityQuery) => 
-    ecs.queryEntities(query);
+  // Update the performance metrics
+  const updatePerformanceMetrics = useCallback(() => {
+    setPerformanceMetrics(ecs.getAllSystemPerformanceMetrics());
+  }, []);
   
-  const addSystem = (system: System) => 
+  // Update the entities list
+  const updateEntities = useCallback(() => {
+    setEntities([...ecs.queryEntities({ active: true })]);
+  }, []);
+  
+  // Register a system
+  const registerSystem = useCallback((system: System) => {
     ecs.addSystem(system);
+  }, []);
   
-  const removeSystem = (systemName: string) => 
-    ecs.removeSystem(systemName);
+  // Save the current state
+  const saveState = useCallback((key?: string) => {
+    ecs.saveState(key);
+  }, []);
   
-  const startECS = () => ecs.start();
+  // Load a saved state
+  const loadState = useCallback((key?: string) => {
+    const loadedEntities = ecs.loadState(key);
+    setEntities([...ecs.queryEntities({ active: true })]);
+    return loadedEntities;
+  }, []);
   
-  const stopECS = () => ecs.stop();
+  // Export state to JSON
+  const exportState = useCallback(() => {
+    return ecs.exportToJSON();
+  }, []);
   
-  const resetECS = () => ecs.reset();
+  // Import state from JSON
+  const importState = useCallback((json: string) => {
+    const entities = ecs.importFromJSON(json);
+    setEntities([...ecs.queryEntities({ active: true })]);
+    return entities;
+  }, []);
   
-  const getPerformanceMetrics = () => 
-    ecs.getAllSystemPerformanceMetrics();
+  // Update entities and metrics periodically when running
+  useEffect(() => {
+    if (!isRunning) return;
+    
+    const interval = setInterval(() => {
+      updateEntities();
+      updatePerformanceMetrics();
+    }, 1000); // Update once per second
+    
+    return () => clearInterval(interval);
+  }, [isRunning, updateEntities, updatePerformanceMetrics]);
   
   return {
     ecs,
-    createEntity,
-    addComponent,
-    removeEntity,
-    queryEntities,
-    addSystem,
-    removeSystem,
+    isRunning,
+    entities,
+    performanceMetrics,
     startECS,
     stopECS,
     resetECS,
-    getPerformanceMetrics
+    createEntity,
+    removeEntity,
+    getEntity,
+    addComponent,
+    registerSystem,
+    saveState,
+    loadState,
+    exportState,
+    importState
   };
-}
+};
