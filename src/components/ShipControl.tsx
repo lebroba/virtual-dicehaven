@@ -1,31 +1,22 @@
-import React, { useState, useRef, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Button } from "./ui/button";
-import { Progress } from "./ui/progress";
-import { Separator } from "./ui/separator";
-import { ShipEntity, Weather, AmmoType } from "../types/Game";
+
+import React, { useState } from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
+import { Button } from './ui/button';
+import { Slider } from './ui/slider';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { ShipEntity, AmmoType, Weather } from '../types/Game';
 
 interface ShipControlProps {
-  // Add properties expected by GameBoard.tsx
-  ship?: ShipEntity;
-  windDirection?: number;
-  windSpeed?: number;
-  weather?: Weather;
-  onCourseChange?: (course: number) => void;
-  onSpeedChange?: (speed: number) => void;
-  onSailConfigChange?: (config: 'full' | 'battle' | 'reduced' | 'minimal' | 'none') => void;
-  onFireCannons?: (side: 'port' | 'starboard' | 'bow' | 'stern') => void;
-  onRepair?: (type: 'hull' | 'rigging' | 'mast' | 'rudder' | 'fire') => void;
-  onAmmoChange?: (side: 'port' | 'starboard' | 'bow' | 'stern', ammo: AmmoType) => void;
-
-  // Original properties (keep for backward compatibility)
-  initialCourse?: number;
-  initialSpeed?: number;
-  maxSpeed?: number;
-  maxHealth?: number;
-  maxEnergy?: number;
-  currentHealth?: number;
-  currentEnergy?: number;
+  ship: ShipEntity;
+  windDirection: number;
+  windSpeed: number;
+  weather: Weather;
+  onCourseChange: (course: number) => void;
+  onSpeedChange: (speed: number) => void;
+  onSailConfigChange: (config: 'full' | 'battle' | 'reduced' | 'minimal' | 'none') => void;
+  onFireCannons: (side: 'port' | 'starboard' | 'bow' | 'stern') => void;
+  onRepair: (type: 'hull' | 'rigging' | 'mast' | 'rudder' | 'fire') => void;
+  onAmmoChange: (side: 'port' | 'starboard' | 'bow' | 'stern', ammo: AmmoType) => void;
 }
 
 const ShipControl: React.FC<ShipControlProps> = ({
@@ -38,173 +29,365 @@ const ShipControl: React.FC<ShipControlProps> = ({
   onSailConfigChange,
   onFireCannons,
   onRepair,
-  onAmmoChange,
-  initialCourse = 0,
-  initialSpeed = 0,
-  maxSpeed = 30,
-  maxHealth = 100,
-  maxEnergy = 100,
-  currentHealth = 100,
-  currentEnergy = 80,
+  onAmmoChange
 }) => {
-  // Use ship properties if available, otherwise fall back to the original props
-  const course = ship?.rotation ?? initialCourse;
-  const speed = ship?.currentSpeed ?? initialSpeed;
-  const [isDragging, setIsDragging] = useState(false);
-  const dialRef = useRef<HTMLDivElement>(null);
+  const [selectedTab, setSelectedTab] = useState('sailing');
+  const [portAmmo, setPortAmmo] = useState<AmmoType>('roundShot');
+  const [starboardAmmo, setStarboardAmmo] = useState<AmmoType>('roundShot');
+  const [bowAmmo, setBowAmmo] = useState<AmmoType>('chainShot');
+  const [sternAmmo, setSternAmmo] = useState<AmmoType>('chainShot');
 
-  // Handle course change when dragging the arrow
-  const handleCourseChange = (e: React.MouseEvent | MouseEvent) => {
-    if (!isDragging || !dialRef.current) return;
-
-    const dial = dialRef.current;
-    const rect = dial.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-
-    // Calculate angle from center to mouse position
-    const angleRad = Math.atan2(e.clientY - centerY, e.clientX - centerX);
-    // Convert to degrees, adjust to start from North (90 degrees offset)
-    // and ensure it's between 0-359 degrees
-    let angleDeg = (Math.round(angleRad * (180 / Math.PI) + 90) + 360) % 360;
-    
-    if (onCourseChange) {
-      onCourseChange(angleDeg);
-    }
-  };
-
-  // Set up event listeners for dragging
-  useEffect(() => {
-    const handleMouseUp = () => {
-      setIsDragging(false);
-    };
-
-    const handleMouseMove = (e: MouseEvent) => {
-      handleCourseChange(e);
-    };
-
-    if (isDragging) {
-      window.addEventListener("mousemove", handleMouseMove);
-      window.addEventListener("mouseup", handleMouseUp);
-    }
-
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, [isDragging]);
-
-  // Handle speed changes
-  const changeSpeed = (increment: number) => {
-    const effectiveMaxSpeed = ship?.maxSpeed ?? maxSpeed;
-    const newSpeed = Math.max(0, Math.min(effectiveMaxSpeed, (ship?.currentSpeed ?? speed) + increment));
-    
-    if (onSpeedChange) {
-      onSpeedChange(newSpeed);
-    }
-  };
-
-  // Use ship health values if available
-  const healthMax = ship?.damageState?.hullIntegrity ?? maxHealth;
-  const healthCurrent = ship?.damageState?.hullIntegrity ?? currentHealth;
+  // Calculate relative wind direction to ship heading
+  const relativeWindDir = ((windDirection - ship.rotation) + 360) % 360;
+  let windEfficiency = 1.0;
   
-  // Use ship energy values if available
-  const energyMax = maxEnergy; 
-  const energyCurrent = currentEnergy;
-
+  // Simple wind efficiency calculation based on relative wind direction
+  // With max efficiency when wind is from behind (135-225°)
+  if (relativeWindDir > 45 && relativeWindDir < 315) {
+    if (relativeWindDir > 135 && relativeWindDir < 225) {
+      // Wind from behind - max efficiency
+      windEfficiency = 1.0;
+    } else if (relativeWindDir > 225 && relativeWindDir < 315) {
+      // Wind from port side - good efficiency
+      windEfficiency = 0.8;
+    } else if (relativeWindDir > 45 && relativeWindDir < 135) {
+      // Wind from starboard side - good efficiency
+      windEfficiency = 0.8;
+    }
+  } else {
+    // Wind from ahead - worst efficiency (into the wind)
+    windEfficiency = 0.3;
+  }
+  
+  // Weather affects speed
+  const weatherEffects = {
+    'clear': 1.0,
+    'cloudy': 0.9,
+    'rain': 0.7,
+    'fog': 0.8
+  };
+  
+  const weatherMultiplier = weatherEffects[weather];
+  
+  // Handle course change from the heading wheel
+  const handleCourseChange = (newCourse: number) => {
+    onCourseChange(newCourse);
+  };
+  
+  // Handle speed change from the speed slider
+  const handleSpeedChange = (newSpeed: number[]) => {
+    onSpeedChange(newSpeed[0]);
+  };
+  
+  // Handle sail configuration changes
+  const handleSailConfig = (config: 'full' | 'battle' | 'reduced' | 'minimal' | 'none') => {
+    onSailConfigChange(config);
+  };
+  
+  // Handle ammunition change
+  const handleAmmoChange = (side: 'port' | 'starboard' | 'bow' | 'stern', ammo: AmmoType) => {
+    switch (side) {
+      case 'port':
+        setPortAmmo(ammo);
+        break;
+      case 'starboard':
+        setStarboardAmmo(ammo);
+        break;
+      case 'bow':
+        setBowAmmo(ammo);
+        break;
+      case 'stern':
+        setSternAmmo(ammo);
+        break;
+    }
+    
+    onAmmoChange(side, ammo);
+  };
+  
   return (
-    <Card className="w-full">
+    <Card>
       <CardHeader>
-        <CardTitle>{ship?.name ?? "Ship Control"}</CardTitle>
+        <CardTitle className="flex justify-between items-center">
+          <span>{ship.name}</span>
+          <span className={`text-sm px-2 py-1 rounded ${
+            ship.status === 'idle' ? 'bg-slate-200 text-slate-700' : 
+            ship.status === 'moving' ? 'bg-blue-100 text-blue-700' :
+            ship.status === 'combat' ? 'bg-red-100 text-red-700' :
+            ship.status === 'boarding' ? 'bg-purple-100 text-purple-700' :
+            ship.status === 'boarded' ? 'bg-yellow-100 text-yellow-700' :
+            ship.status === 'sinking' ? 'bg-red-700 text-white' : ''
+          }`}>
+            {ship.status.charAt(0).toUpperCase() + ship.status.slice(1)}
+          </span>
+        </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Course control dial */}
-        <div className="space-y-2">
-          <h3 className="text-sm font-medium">Course: {course}°</h3>
-          <div 
-            ref={dialRef}
-            className="relative w-40 h-40 mx-auto rounded-full border-2 border-slate-300 bg-slate-100 dark:bg-slate-800"
-            onMouseDown={(e) => {
-              setIsDragging(true);
-              handleCourseChange(e);
-            }}
-          >
-            {/* Cardinal direction marks */}
-            <div className="absolute top-2 left-1/2 -translate-x-1/2 text-xs font-bold">N</div>
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-bold">E</div>
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs font-bold">S</div>
-            <div className="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-bold">W</div>
-            
-            {/* Center point */}
-            <div className="absolute top-1/2 left-1/2 w-2 h-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-slate-500" />
-            
-            {/* Arrow indicator */}
-            <div 
-              className="absolute top-1/2 left-1/2 w-1 h-16 -translate-x-1/2 -mt-16 bg-red-500 rounded-t-full origin-bottom cursor-pointer"
-              style={{ transform: `rotate(${course}deg)` }}
-            />
-          </div>
-        </div>
-
-        <Separator />
-
-        {/* Speed control */}
-        <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <h3 className="text-sm font-medium">Speed</h3>
-            <div className="font-bold">{speed} knots</div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => changeSpeed(-1)}
-              disabled={speed <= 0}
-            >
-              -
-            </Button>
-            <div className="h-2 flex-1 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-blue-500 transition-all duration-300" 
-                style={{ width: `${(speed / (ship?.maxSpeed || maxSpeed)) * 100}%` }}
-              />
-            </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => changeSpeed(1)}
-              disabled={speed >= (ship?.maxSpeed || maxSpeed)}
-            >
-              +
-            </Button>
-          </div>
-        </div>
-
-        <Separator />
-
-        {/* Ship status */}
-        <div className="space-y-4">
-          <h3 className="text-sm font-medium">Ship Status</h3>
+      <CardContent>
+        <Tabs defaultValue="sailing" onValueChange={setSelectedTab} value={selectedTab}>
+          <TabsList className="grid grid-cols-3 mb-4">
+            <TabsTrigger value="sailing">Sailing</TabsTrigger>
+            <TabsTrigger value="combat">Combat</TabsTrigger>
+            <TabsTrigger value="repairs">Repairs</TabsTrigger>
+          </TabsList>
           
-          <div className="space-y-2">
-            <div className="flex justify-between text-xs">
-              <span>Hull Integrity</span>
-              <span>{Math.round(healthCurrent)}/{healthMax}</span>
+          {/* Sailing Controls */}
+          <TabsContent value="sailing">
+            <div className="space-y-4">
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-sm font-medium">Course: {ship.rotation}°</label>
+                  <div className="flex space-x-1">
+                    <Button size="sm" onClick={() => handleCourseChange((ship.rotation - 15 + 360) % 360)}>⟲</Button>
+                    <Button size="sm" onClick={() => handleCourseChange((ship.rotation + 15) % 360)}>⟳</Button>
+                  </div>
+                </div>
+                <div className="relative h-32 w-32 rounded-full bg-slate-100 mx-auto">
+                  <div className="absolute top-1/2 left-1/2 w-0.5 h-16 bg-blue-500" 
+                       style={{
+                         transform: `translate(-50%, -100%) rotate(${ship.rotation}deg)`,
+                         transformOrigin: 'bottom center'
+                       }}>
+                    <div className="w-3 h-3 rounded-full bg-blue-700 absolute -top-1.5 left-1/2 transform -translate-x-1/2"></div>
+                  </div>
+                  <div className="absolute top-1/2 left-1/2 w-0.5 h-14 bg-red-500 opacity-50" 
+                       style={{
+                         transform: `translate(-50%, -100%) rotate(${windDirection}deg)`,
+                         transformOrigin: 'bottom center'
+                       }}>
+                    <div className="w-2 h-2 rounded-full bg-red-700 absolute -top-1 left-1/2 transform -translate-x-1/2"></div>
+                  </div>
+                </div>
+                <div className="text-xs text-center mt-2">
+                  <p>Wind: {windDirection}° at {windSpeed} knots ({Math.round(windEfficiency * 100)}% efficiency)</p>
+                  <p>Weather: {weather} ({Math.round(weatherMultiplier * 100)}% sailing efficiency)</p>
+                </div>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium">Speed</label>
+                <Slider
+                  value={[ship.currentSpeed]}
+                  max={10}
+                  step={1}
+                  onValueChange={handleSpeedChange}
+                  className="mt-2"
+                />
+                <div className="flex justify-between text-xs text-slate-500 mt-1">
+                  <span>Stop</span>
+                  <span>Half</span>
+                  <span>Full</span>
+                </div>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium">Sail Configuration</label>
+                <div className="grid grid-cols-5 gap-1 mt-2">
+                  <Button 
+                    variant={ship.sailConfiguration === 'full' ? 'default' : 'outline'} 
+                    size="sm" 
+                    onClick={() => handleSailConfig('full')}
+                    className="text-xs"
+                  >
+                    Full
+                  </Button>
+                  <Button 
+                    variant={ship.sailConfiguration === 'battle' ? 'default' : 'outline'} 
+                    size="sm" 
+                    onClick={() => handleSailConfig('battle')}
+                    className="text-xs"
+                  >
+                    Battle
+                  </Button>
+                  <Button 
+                    variant={ship.sailConfiguration === 'reduced' ? 'default' : 'outline'} 
+                    size="sm" 
+                    onClick={() => handleSailConfig('reduced')}
+                    className="text-xs"
+                  >
+                    Reduced
+                  </Button>
+                  <Button 
+                    variant={ship.sailConfiguration === 'minimal' ? 'default' : 'outline'} 
+                    size="sm" 
+                    onClick={() => handleSailConfig('minimal')}
+                    className="text-xs"
+                  >
+                    Minimal
+                  </Button>
+                  <Button 
+                    variant={ship.sailConfiguration === 'none' ? 'default' : 'outline'} 
+                    size="sm" 
+                    onClick={() => handleSailConfig('none')}
+                    className="text-xs"
+                  >
+                    None
+                  </Button>
+                </div>
+              </div>
             </div>
-            <Progress value={(healthCurrent / healthMax) * 100} className="h-2" />
-          </div>
+          </TabsContent>
           
-          <div className="space-y-2">
-            <div className="flex justify-between text-xs">
-              <span>Energy</span>
-              <span>{energyCurrent}/{energyMax}</span>
+          {/* Combat Controls */}
+          <TabsContent value="combat">
+            <div className="space-y-4">
+              {/* Port Guns */}
+              <div className="border rounded p-2">
+                <div className="flex justify-between items-center">
+                  <label className="text-sm font-medium">Port Guns</label>
+                  <div className="flex space-x-1">
+                    <Button 
+                      size="sm" 
+                      variant={portAmmo === 'roundShot' ? 'default' : 'outline'} 
+                      className="text-xs"
+                      onClick={() => handleAmmoChange('port', 'roundShot')}
+                    >
+                      Round
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant={portAmmo === 'chainShot' ? 'default' : 'outline'} 
+                      className="text-xs"
+                      onClick={() => handleAmmoChange('port', 'chainShot')}
+                    >
+                      Chain
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant={portAmmo === 'grapeShot' ? 'default' : 'outline'} 
+                      className="text-xs"
+                      onClick={() => handleAmmoChange('port', 'grapeShot')}
+                    >
+                      Grape
+                    </Button>
+                  </div>
+                </div>
+                <Button 
+                  className="w-full mt-2" 
+                  onClick={() => onFireCannons('port')}
+                  variant="destructive"
+                >
+                  Fire Port Guns
+                </Button>
+              </div>
+              
+              {/* Starboard Guns */}
+              <div className="border rounded p-2">
+                <div className="flex justify-between items-center">
+                  <label className="text-sm font-medium">Starboard Guns</label>
+                  <div className="flex space-x-1">
+                    <Button 
+                      size="sm" 
+                      variant={starboardAmmo === 'roundShot' ? 'default' : 'outline'} 
+                      className="text-xs"
+                      onClick={() => handleAmmoChange('starboard', 'roundShot')}
+                    >
+                      Round
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant={starboardAmmo === 'chainShot' ? 'default' : 'outline'} 
+                      className="text-xs"
+                      onClick={() => handleAmmoChange('starboard', 'chainShot')}
+                    >
+                      Chain
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant={starboardAmmo === 'grapeShot' ? 'default' : 'outline'} 
+                      className="text-xs"
+                      onClick={() => handleAmmoChange('starboard', 'grapeShot')}
+                    >
+                      Grape
+                    </Button>
+                  </div>
+                </div>
+                <Button 
+                  className="w-full mt-2" 
+                  onClick={() => onFireCannons('starboard')}
+                  variant="destructive"
+                >
+                  Fire Starboard Guns
+                </Button>
+              </div>
+              
+              {/* Bow & Stern Guns */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="border rounded p-2">
+                  <label className="text-sm font-medium">Bow Guns</label>
+                  <Button 
+                    className="w-full mt-2" 
+                    onClick={() => onFireCannons('bow')}
+                    variant="destructive"
+                    size="sm"
+                  >
+                    Fire Bow Guns
+                  </Button>
+                </div>
+                <div className="border rounded p-2">
+                  <label className="text-sm font-medium">Stern Guns</label>
+                  <Button 
+                    className="w-full mt-2" 
+                    onClick={() => onFireCannons('stern')}
+                    variant="destructive"
+                    size="sm"
+                  >
+                    Fire Stern Guns
+                  </Button>
+                </div>
+              </div>
             </div>
-            <Progress 
-              value={(energyCurrent / energyMax) * 100} 
-              className="h-2 bg-slate-200 dark:bg-slate-700"
-            />
-          </div>
-        </div>
+          </TabsContent>
+          
+          {/* Repairs Tab */}
+          <TabsContent value="repairs">
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <Button onClick={() => onRepair('hull')}>
+                  Repair Hull
+                </Button>
+                <Button onClick={() => onRepair('rigging')}>
+                  Repair Rigging
+                </Button>
+                <Button onClick={() => onRepair('mast')}>
+                  Repair Mast
+                </Button>
+                <Button onClick={() => onRepair('rudder')}>
+                  Repair Rudder
+                </Button>
+              </div>
+              
+              <div className="mt-4">
+                <Button 
+                  className="w-full" 
+                  onClick={() => onRepair('fire')}
+                  variant="destructive"
+                >
+                  Extinguish Fires
+                </Button>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-2 mt-4">
+                <div>
+                  <div className="text-sm font-medium">Hull</div>
+                  <div className="w-full bg-slate-200 rounded-full h-2 mt-1">
+                    <div 
+                      className="bg-green-500 h-2 rounded-full" 
+                      style={{ width: `${ship.damageState.hullIntegrity}%` }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm font-medium">Rigging</div>
+                  <div className="w-full bg-slate-200 rounded-full h-2 mt-1">
+                    <div 
+                      className="bg-yellow-500 h-2 rounded-full" 
+                      style={{ width: `${100 - ship.damageState.riggingDamage}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );
