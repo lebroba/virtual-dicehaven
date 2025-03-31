@@ -75,6 +75,8 @@ export interface ShipEntity {
   targetPosition?: Position;
   currentHealth?: number;
   maxHealth?: number;
+  // Additional property needed by GameEngine
+  maneuverability?: number;
 }
 
 export interface Team {
@@ -104,6 +106,29 @@ export interface GameConfig {
   victoryCondition: 'elimination' | 'captureFlag' | 'escort' | 'survival';
 }
 
+// Extended game event types
+export interface WindChangeEvent {
+  type: "windChange";
+  newWindDirection?: number;
+  newWindSpeed?: number;
+}
+
+export interface ShipDamageEvent {
+  type: "shipDamage";
+  entityId: string;
+  damageType: "hull" | "mast" | "rigging" | "crew" | "rudder";
+  amount: number;
+  isCritical: boolean;
+}
+
+export interface CannonFireEvent {
+  type: "cannonFire";
+  entityId: string;
+  targetId: string;
+  side: "port" | "starboard" | "bow" | "stern";
+  ammunition: number;
+}
+
 // Game State
 export interface GameState {
   ships: ShipEntity[];
@@ -117,6 +142,14 @@ export interface GameState {
   currentTeamId?: string;
   status: 'preparing' | 'running' | 'paused' | 'completed';
   winner?: string; // team ID of winner
+  // Additional properties required by GameEngine and GameBoard
+  entities: Entity[];
+  isRunning: boolean;
+  lastUpdate: number;
+  eventQueue: GameEvent[];
+  deltaTime: number;
+  timeScale: number;
+  activeTeamId?: string;
 }
 
 // Event types
@@ -126,6 +159,15 @@ export interface GameEvent {
   source?: string;
   target?: string;
   data: any;
+  // Additional properties used in GameEngine
+  entityId?: string;
+  targetId?: string;
+  targetPosition?: Position;
+  attackerId?: string;
+  damageType?: string;
+  amount?: number;
+  newWindDirection?: number;
+  newWindSpeed?: number;
 }
 
 export interface CombatEvent extends GameEvent {

@@ -1,237 +1,202 @@
 
-import { Entity, EntityId, Component, System, EntityEvent, EntityEventCallback, EntityQuery } from './types';
-import { EntityRegistry } from './EntityRegistry';
+import { EntityManager } from './EntityManager';
 import { ComponentManager } from './ComponentManager';
 import { SystemManager } from './SystemManager';
+import { EntityRegistry } from './EntityRegistry';
+import { EventSystem } from './EventSystem';
+import { Entity, Component, System, EntityEvent, EntityQuery } from './types';
 
+/**
+ * Main ECS class that manages entities, components, and systems
+ */
 export class ECS {
   private entityRegistry: EntityRegistry;
+  private entityManager: EntityManager;
   private componentManager: ComponentManager;
   private systemManager: SystemManager;
+  private eventSystem: EventSystem;
+  
   private isRunning: boolean = false;
   private lastFrameTime: number = 0;
-  private frameId: number | null = null;
   
   constructor() {
     this.entityRegistry = new EntityRegistry();
+    this.entityManager = new EntityManager(this.entityRegistry);
     this.componentManager = new ComponentManager(this.entityRegistry);
-    this.systemManager = new SystemManager();
-    
-    // Initialize common component types
-    this.componentManager.registerComponentType('position');
-    this.componentManager.registerComponentType('velocity');
-    this.componentManager.registerComponentType('rotation');
-    this.componentManager.registerComponentType('scale');
-    this.componentManager.registerComponentType('renderable');
-    this.componentManager.registerComponentType('collider');
-    this.componentManager.registerComponentType('health');
-    this.componentManager.registerComponentType('ship');
+    this.systemManager = new SystemManager(this.entityRegistry);
+    this.eventSystem = new EventSystem();
   }
   
-  // Entity Management
-  createEntity(tags: string[] = []): Entity {
-    return this.entityRegistry.createEntity(tags);
-  }
-  
-  removeEntity(entityId: EntityId): boolean {
-    return this.entityRegistry.removeEntity(entityId);
-  }
-  
-  getEntity(entityId: EntityId): Entity | undefined {
-    return this.entityRegistry.getEntity(entityId);
-  }
-  
-  setEntityActive(entityId: EntityId, active: boolean): void {
-    this.entityRegistry.setEntityActive(entityId, active);
-  }
-  
-  addTag(entityId: EntityId, tag: string): void {
-    this.entityRegistry.addTag(entityId, tag);
-  }
-  
-  removeTag(entityId: EntityId, tag: string): void {
-    this.entityRegistry.removeTag(entityId, tag);
-  }
-  
-  hasTag(entityId: EntityId, tag: string): boolean {
-    return this.entityRegistry.hasTag(entityId, tag);
-  }
-  
-  queryEntities(query: EntityQuery): Entity[] {
-    return this.entityRegistry.queryEntities(query);
-  }
-  
-  // Component Management
-  addComponent(entityId: EntityId, component: Component): boolean {
-    return this.componentManager.addComponent(entityId, component);
-  }
-  
-  removeComponent(entityId: EntityId, componentType: string): boolean {
-    return this.componentManager.removeComponent(entityId, componentType);
-  }
-  
-  getComponent<T extends Component>(entityId: EntityId, componentType: string): T | undefined {
-    return this.componentManager.getComponent<T>(entityId, componentType);
-  }
-  
-  hasComponent(entityId: EntityId, componentType: string): boolean {
-    return this.componentManager.hasComponent(entityId, componentType);
-  }
-  
-  // System Management
-  addSystem(system: System): boolean {
-    return this.systemManager.addSystem(system);
-  }
-  
-  removeSystem(systemName: string): boolean {
-    return this.systemManager.removeSystem(systemName);
-  }
-  
-  getSystem(systemName: string): System | undefined {
-    return this.systemManager.getSystem(systemName);
-  }
-  
-  enableSystem(systemName: string): boolean {
-    return this.systemManager.enableSystem(systemName);
-  }
-  
-  disableSystem(systemName: string): boolean {
-    return this.systemManager.disableSystem(systemName);
-  }
-  
-  // Event System
-  private eventListeners: Map<string, Map<EntityId, EntityEventCallback[]>> = new Map();
-  
-  addEventListener(entityId: EntityId, eventType: string, callback: EntityEventCallback): void {
-    if (!this.eventListeners.has(eventType)) {
-      this.eventListeners.set(eventType, new Map());
-    }
-    
-    const eventTypeListeners = this.eventListeners.get(eventType)!;
-    if (!eventTypeListeners.has(entityId)) {
-      eventTypeListeners.set(entityId, []);
-    }
-    
-    eventTypeListeners.get(entityId)!.push(callback);
-  }
-  
-  removeEventListener(entityId: EntityId, eventType: string, callback: EntityEventCallback): boolean {
-    const eventTypeListeners = this.eventListeners.get(eventType);
-    if (!eventTypeListeners) return false;
-    
-    const entityListeners = eventTypeListeners.get(entityId);
-    if (!entityListeners) return false;
-    
-    const index = entityListeners.indexOf(callback);
-    if (index === -1) return false;
-    
-    entityListeners.splice(index, 1);
-    
-    // Clean up empty arrays and maps
-    if (entityListeners.length === 0) {
-      eventTypeListeners.delete(entityId);
-    }
-    if (eventTypeListeners.size === 0) {
-      this.eventListeners.delete(eventType);
-    }
-    
-    return true;
-  }
-  
-  triggerEvent(event: EntityEvent): void {
-    const eventTypeListeners = this.eventListeners.get(event.type);
-    if (!eventTypeListeners) return;
-    
-    // Notify listeners on the source entity
-    const sourceListeners = eventTypeListeners.get(event.sourceEntityId);
-    if (sourceListeners) {
-      sourceListeners.forEach(callback => callback(event.data));
-    }
-    
-    // Notify listeners on the target entity, if specified
-    if (event.targetEntityId !== undefined) {
-      const targetListeners = eventTypeListeners.get(event.targetEntityId);
-      if (targetListeners) {
-        targetListeners.forEach(callback => callback(event.data));
-      }
-    }
-  }
-  
-  // System Execution
-  private update(timestamp: number): void {
-    if (!this.isRunning) return;
-    
-    const deltaTime = this.lastFrameTime ? (timestamp - this.lastFrameTime) / 1000 : 0;
-    this.lastFrameTime = timestamp;
-    
-    const allEntities = this.entityRegistry.getAllEntities();
-    const activeSystems = this.systemManager.getActiveSystems();
-    
-    // Call beforeUpdate hooks
-    for (const system of activeSystems) {
-      if (system.executeBeforeUpdate) {
-        system.executeBeforeUpdate();
-      }
-    }
-    
-    // Execute systems
-    for (const system of activeSystems) {
-      system.execute(deltaTime, allEntities);
-    }
-    
-    // Call afterUpdate hooks
-    for (const system of activeSystems) {
-      if (system.executeAfterUpdate) {
-        system.executeAfterUpdate();
-      }
-    }
-    
-    // Schedule next frame
-    this.frameId = requestAnimationFrame(this.update.bind(this));
-  }
-  
+  /**
+   * Start the ECS main loop
+   */
   start(): void {
     if (this.isRunning) return;
     
     this.isRunning = true;
-    this.lastFrameTime = 0;
-    this.frameId = requestAnimationFrame(this.update.bind(this));
-    console.log('ECS started');
+    this.lastFrameTime = performance.now();
+    this.update();
   }
   
+  /**
+   * Stop the ECS main loop
+   */
   stop(): void {
+    this.isRunning = false;
+  }
+  
+  /**
+   * Main update loop - called each frame
+   */
+  private update(): void {
     if (!this.isRunning) return;
     
-    this.isRunning = false;
-    if (this.frameId !== null) {
-      cancelAnimationFrame(this.frameId);
-      this.frameId = null;
-    }
-    console.log('ECS stopped');
+    const now = performance.now();
+    const deltaTime = (now - this.lastFrameTime) / 1000; // Convert to seconds
+    this.lastFrameTime = now;
+    
+    // Update all systems
+    this.systemManager.update(deltaTime);
+    
+    // Schedule next frame
+    requestAnimationFrame(() => this.update());
   }
   
-  reset(): void {
-    // Stop the update loop
-    this.stop();
-    
-    // Clear all systems
-    this.systemManager.clear();
-    
-    // Clear all entities and components
-    // We'll recreate the entity registry and component manager
-    this.entityRegistry = new EntityRegistry();
-    this.componentManager = new ComponentManager(this.entityRegistry);
-    
-    // Clear event listeners
-    this.eventListeners.clear();
-    
-    console.log('ECS reset');
+  /**
+   * Create a new entity
+   */
+  createEntity(): Entity {
+    return this.entityManager.createEntity();
   }
   
-  getAllSystemPerformanceMetrics() {
-    return this.systemManager.getPerformanceMetrics();
+  /**
+   * Remove an entity from the ECS
+   */
+  removeEntity(entityId: number): boolean {
+    return this.entityManager.removeEntity(entityId);
+  }
+  
+  /**
+   * Add a component to an entity
+   */
+  addComponent(entityId: number, component: Component): boolean {
+    return this.componentManager.addComponent(entityId, component);
+  }
+  
+  /**
+   * Remove a component from an entity
+   */
+  removeComponent(entityId: number, componentType: string): boolean {
+    return this.componentManager.removeComponent(entityId, componentType);
+  }
+  
+  /**
+   * Get a component from an entity
+   */
+  getComponent(entityId: number, componentType: string): Component | undefined {
+    return this.componentManager.getComponent(entityId, componentType);
+  }
+  
+  /**
+   * Add a system to the ECS
+   */
+  addSystem(system: System): void {
+    this.systemManager.registerSystem(system);
+  }
+  
+  /**
+   * Remove a system from the ECS
+   */
+  removeSystem(systemName: string): boolean {
+    return this.systemManager.removeSystem(systemName);
+  }
+  
+  /**
+   * Get a system by name
+   */
+  getSystem(systemName: string): System | undefined {
+    return this.systemManager.getSystem(systemName);
+  }
+  
+  /**
+   * Query entities based on criteria
+   */
+  queryEntities(query: EntityQuery): Entity[] {
+    return this.entityRegistry.queryEntities(query);
+  }
+  
+  /**
+   * Add an event listener
+   */
+  addEventListener(eventType: string, callback: (event: EntityEvent) => void): number {
+    return this.eventSystem.addEventListener(eventType, callback);
+  }
+  
+  /**
+   * Remove an event listener
+   */
+  removeEventListener(eventType: string, listenerId: number): boolean {
+    return this.eventSystem.removeEventListener(eventType, listenerId);
+  }
+  
+  /**
+   * Dispatch an event
+   */
+  dispatchEvent(event: EntityEvent): void {
+    this.eventSystem.dispatchEvent(event);
+  }
+  
+  /**
+   * Send an event from one entity to another
+   */
+  sendEvent(
+    eventType: string,
+    sourceEntityId: number,
+    targetEntityId: number,
+    data: any = {}
+  ): void {
+    this.eventSystem.sendEvent(eventType, sourceEntityId, targetEntityId, data);
+  }
+  
+  /**
+   * Broadcast an event from an entity to all entities
+   */
+  broadcastEvent(
+    eventType: string,
+    sourceEntityId: number,
+    data: any = {}
+  ): void {
+    this.eventSystem.broadcastEvent(eventType, sourceEntityId, data);
+  }
+  
+  /**
+   * Get the entity manager
+   */
+  getEntityManager(): EntityManager {
+    return this.entityManager;
+  }
+  
+  /**
+   * Get the component manager
+   */
+  getComponentManager(): ComponentManager {
+    return this.componentManager;
+  }
+  
+  /**
+   * Get the system manager
+   */
+  getSystemManager(): SystemManager {
+    return this.systemManager;
+  }
+  
+  /**
+   * Get the event system
+   */
+  getEventSystem(): EventSystem {
+    return this.eventSystem;
   }
 }
 
-// Export a singleton instance
+// Create a singleton instance
 export const ecs = new ECS();

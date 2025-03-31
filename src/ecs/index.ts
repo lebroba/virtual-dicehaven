@@ -6,6 +6,7 @@ export * from './EntityManager';
 export * from './EntityRegistry';
 export * from './ComponentManager';
 export * from './SystemManager';
+export * from './EventSystem';
 export * from './components/common';
 export * from './components/ship';
 export * from './systems/MovementSystem';
