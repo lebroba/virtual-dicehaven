@@ -1,4 +1,3 @@
-
 import { Entity, EntityId, EntityQuery, Component, ComponentType } from './types';
 
 export class EntityRegistry {
@@ -6,6 +5,14 @@ export class EntityRegistry {
   private nextEntityId: EntityId = 1;
   
   constructor() {}
+  
+  /**
+   * Clear all entities
+   */
+  clear(): void {
+    this.entities.clear();
+    this.nextEntityId = 1;
+  }
   
   /**
    * Create a new entity

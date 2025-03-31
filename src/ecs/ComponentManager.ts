@@ -1,4 +1,3 @@
-
 import { Component, ComponentType, EntityId, LODLevel, SystemPriority } from './types';
 import { EntityRegistry } from './EntityRegistry';
 
@@ -177,5 +176,12 @@ export class ComponentManager {
     }
     
     return components;
+  }
+
+  /**
+   * Clear all registered component types
+   */
+  clear(): void {
+    this.componentTypeRegistry.clear();
   }
 }

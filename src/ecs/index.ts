@@ -2,6 +2,7 @@
 // Export all ECS components for easy importing
 export * from './types';
 export * from './ECS';
+export * from './ECSWorld';
 export * from './EntityManager';
 export * from './EntityRegistry';
 export * from './ComponentManager';
@@ -19,6 +20,7 @@ export * from './hooks/useEntity';
 export * from './hooks/useSystem';
 export * from './examples/ShipExample';
 
-// Export the singleton instance
+// Export the singleton instances
 import { ecs } from './ECS';
-export { ecs };
+import { world } from './ECSWorld';
+export { ecs, world };

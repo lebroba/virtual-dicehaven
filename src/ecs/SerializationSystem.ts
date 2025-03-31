@@ -1,5 +1,4 @@
-
-import { Entity, EntityId, Component } from './types';
+import { Entity, EntityId, Component, SystemPriority, LODLevel } from './types';
 import { EntityRegistry } from './EntityRegistry';
 import { ComponentManager } from './ComponentManager';
 
@@ -100,11 +99,15 @@ export class SerializationSystem {
       delete componentData.lodLevel;
       delete componentData.enabled;
       
+      // Convert string values to the expected enum types
+      const priorityValue = this.convertPriority(serializedComponent.priority);
+      const lodLevelValue = this.convertLodLevel(serializedComponent.lodLevel);
+      
       const component: Component = {
         type: serializedComponent.type,
         entityId: entity.id,
-        priority: serializedComponent.priority as any,
-        lodLevel: serializedComponent.lodLevel as any,
+        priority: priorityValue,
+        lodLevel: lodLevelValue,
         enabled: serializedComponent.enabled,
         ...componentData
       };
@@ -113,6 +116,40 @@ export class SerializationSystem {
     }
     
     return entity;
+  }
+  
+  /**
+   * Convert priority string to SystemPriority enum
+   */
+  private convertPriority(priorityStr: string): SystemPriority {
+    switch (priorityStr) {
+      case 'high':
+        return 'high';
+      case 'medium':
+        return 'medium';
+      case 'low':
+        return 'low';
+      default:
+        console.warn(`Unknown priority: ${priorityStr}, using 'medium' as default`);
+        return 'medium';
+    }
+  }
+  
+  /**
+   * Convert LOD level string to LODLevel enum
+   */
+  private convertLodLevel(lodLevelStr: string): LODLevel {
+    switch (lodLevelStr) {
+      case 'high':
+        return 'high';
+      case 'medium':
+        return 'medium';
+      case 'low':
+        return 'low';
+      default:
+        console.warn(`Unknown LOD level: ${lodLevelStr}, using 'medium' as default`);
+        return 'medium';
+    }
   }
   
   /**
