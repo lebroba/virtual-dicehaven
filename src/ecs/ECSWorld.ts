@@ -1,4 +1,3 @@
-
 import { EntityRegistry } from './EntityRegistry';
 import { ComponentManager } from './ComponentManager';
 import { SystemManager } from './SystemManager';
@@ -224,7 +223,7 @@ export class ECSWorld {
    * Get performance metrics for all systems
    */
   getAllSystemPerformanceMetrics(): SystemPerformanceMetrics[] {
-    return this.systemManager.getPerformanceMetrics() as SystemPerformanceMetrics[];
+    return this.systemManager.getPerformanceMetrics();
   }
   
   /**

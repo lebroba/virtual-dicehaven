@@ -1,197 +1,245 @@
 
-import { System, SystemPriority, SystemPerformanceMetrics } from './types';
+import { EntityRegistry } from './EntityRegistry';
+import { Entity, System, SystemPriority } from './types';
+
+interface SystemPerformanceMetrics {
+  systemName: string;
+  executionTime: number;
+  entitiesProcessed: number;
+  lastExecutionTimestamp: number;
+  averageExecutionTime: number;
+}
 
 export class SystemManager {
+  private entityRegistry: EntityRegistry;
   private systems: Map<string, System> = new Map();
-  private systemPerformance: Map<string, SystemPerformanceMetrics> = new Map();
-  
-  constructor() {}
-  
+  private systemExecutionOrder: string[] = [];
+  private performanceMetrics: Map<string, SystemPerformanceMetrics> = new Map();
+
+  constructor(entityRegistry: EntityRegistry) {
+    this.entityRegistry = entityRegistry;
+  }
+
   /**
-   * Add a system to the manager
+   * Register a system in the ECS
    */
-  addSystem(system: System): boolean {
+  registerSystem(system: System): void {
     if (this.systems.has(system.name)) {
-      console.warn(`System with name ${system.name} already exists`);
-      return false;
+      console.warn(`System '${system.name}' is already registered. Overwriting.`);
     }
-    
+
     this.systems.set(system.name, system);
+    this.updateSystemExecutionOrder();
     
     // Initialize performance metrics
-    this.systemPerformance.set(system.name, {
+    this.performanceMetrics.set(system.name, {
       systemName: system.name,
       executionTime: 0,
       entitiesProcessed: 0,
       lastExecutionTimestamp: 0,
       averageExecutionTime: 0
     });
-    
-    return true;
   }
-  
+
   /**
-   * Remove a system from the manager
+   * Remove a system from the ECS
    */
   removeSystem(systemName: string): boolean {
-    if (!this.systems.has(systemName)) {
-      return false;
+    const result = this.systems.delete(systemName);
+    if (result) {
+      this.updateSystemExecutionOrder();
+      this.performanceMetrics.delete(systemName);
     }
-    
-    this.systems.delete(systemName);
-    this.systemPerformance.delete(systemName);
-    
-    return true;
+    return result;
   }
-  
+
   /**
    * Get a system by name
    */
   getSystem(systemName: string): System | undefined {
     return this.systems.get(systemName);
   }
-  
+
   /**
-   * Enable a system
+   * Enable or disable a system
    */
-  enableSystem(systemName: string): boolean {
+  setSystemEnabled(systemName: string, enabled: boolean): boolean {
     const system = this.systems.get(systemName);
     if (!system) {
       return false;
     }
     
-    system.enabled = true;
+    system.enabled = enabled;
     return true;
   }
-  
+
   /**
-   * Disable a system
+   * Update all systems
    */
-  disableSystem(systemName: string): boolean {
-    const system = this.systems.get(systemName);
-    if (!system) {
-      return false;
+  update(deltaTime: number): void {
+    // First, execute any pre-update functions
+    for (const systemName of this.systemExecutionOrder) {
+      const system = this.systems.get(systemName)!;
+      
+      if (system.enabled && system.executeBeforeUpdate) {
+        try {
+          system.executeBeforeUpdate();
+        } catch (error) {
+          console.error(`Error in system '${systemName}' executeBeforeUpdate:`, error);
+        }
+      }
     }
     
-    system.enabled = false;
-    return true;
-  }
-  
-  /**
-   * Get all systems
-   */
-  getAllSystems(): System[] {
-    return Array.from(this.systems.values());
-  }
-  
-  /**
-   * Get only active systems
-   */
-  getActiveSystems(): System[] {
-    // Filter for enabled systems
-    const enabledSystems = Array.from(this.systems.values())
-      .filter(system => system.enabled);
+    // Then execute the main update functions
+    for (const systemName of this.systemExecutionOrder) {
+      const system = this.systems.get(systemName)!;
+      
+      if (!system.enabled) {
+        continue;
+      }
+      
+      // Get entities for this system
+      const entities = this.getEntitiesForSystem(system);
+      
+      // Performance tracking
+      const startTime = performance.now();
+      
+      try {
+        // Execute the system's update function
+        system.execute(deltaTime, entities);
+      } catch (error) {
+        console.error(`Error in system '${systemName}' execute:`, error);
+      }
+      
+      // Update performance metrics
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      this.updatePerformanceMetrics(system.name, executionTime, entities.length);
+    }
     
-    // Sort by priority
-    return this.sortSystemsByPriorityAndDependencies(enabledSystems);
+    // Finally, execute any post-update functions
+    for (const systemName of this.systemExecutionOrder) {
+      const system = this.systems.get(systemName)!;
+      
+      if (system.enabled && system.executeAfterUpdate) {
+        try {
+          system.executeAfterUpdate();
+        } catch (error) {
+          console.error(`Error in system '${systemName}' executeAfterUpdate:`, error);
+        }
+      }
+    }
   }
-  
+
   /**
-   * Sort systems by priority and dependencies
+   * Get entities for a specific system
    */
-  private sortSystemsByPriorityAndDependencies(systems: System[]): System[] {
-    // Create a priority map
-    const priorityValues: Record<SystemPriority, number> = {
-      'high': 3,
-      'medium': 2,
-      'low': 1
-    };
+  private getEntitiesForSystem(system: System): Entity[] {
+    // For now, just return all active entities
+    // This could be optimized in the future to only return entities
+    // that have the components required by the system
+    return this.entityRegistry.getAllEntities().filter(entity => entity.active);
+  }
+
+  /**
+   * Update the system execution order based on priorities
+   */
+  private updateSystemExecutionOrder(): void {
+    const systemNames = Array.from(this.systems.keys());
     
-    // Check for circular dependencies
-    const systemNames = new Set(systems.map(system => system.name));
-    const visited = new Set<string>();
-    const recursionStack = new Set<string>();
+    // Sort systems by priority (high -> medium -> low)
+    this.systemExecutionOrder = systemNames.sort((a, b) => {
+      const systemA = this.systems.get(a)!;
+      const systemB = this.systems.get(b)!;
+      
+      const priorityMapping: Record<SystemPriority, number> = {
+        high: 0,
+        medium: 1,
+        low: 2
+      };
+      
+      return priorityMapping[systemA.priority] - priorityMapping[systemB.priority];
+    });
     
-    const detectCircularDependency = (systemName: string): boolean => {
-      if (!visited.has(systemName)) {
-        visited.add(systemName);
-        recursionStack.add(systemName);
+    // Consider dependencies (systems with dependencies run after the systems they depend on)
+    // This is a simplified approach that may not handle all circular dependencies
+    let hasChanged = true;
+    while (hasChanged) {
+      hasChanged = false;
+      
+      for (let i = 0; i < this.systemExecutionOrder.length; i++) {
+        const systemName = this.systemExecutionOrder[i];
+        const system = this.systems.get(systemName)!;
         
-        const system = this.systems.get(systemName);
-        const dependencies = system?.dependencies || [];
-        
-        for (const dep of dependencies) {
-          if (!visited.has(dep) && detectCircularDependency(dep)) {
-            return true;
-          } else if (recursionStack.has(dep)) {
-            console.error(`Circular dependency detected: ${systemName} -> ${dep}`);
-            return true;
+        if (system.dependencies && system.dependencies.length > 0) {
+          // Find the highest index of any dependency
+          let maxDependencyIndex = -1;
+          
+          for (const depName of system.dependencies) {
+            const depIndex = this.systemExecutionOrder.indexOf(depName);
+            if (depIndex !== -1 && depIndex > maxDependencyIndex) {
+              maxDependencyIndex = depIndex;
+            }
+          }
+          
+          // If this system is before any of its dependencies, move it after the last dependency
+          if (maxDependencyIndex !== -1 && i <= maxDependencyIndex) {
+            // Remove the system
+            this.systemExecutionOrder.splice(i, 1);
+            // Insert it after its dependency
+            this.systemExecutionOrder.splice(maxDependencyIndex, 0, systemName);
+            hasChanged = true;
+            break;
           }
         }
       }
-      
-      recursionStack.delete(systemName);
-      return false;
-    };
-    
-    // Check for circular dependencies
-    for (const system of systems) {
-      if (detectCircularDependency(system.name)) {
-        console.error('Circular dependency detected in systems, some systems may not run in the expected order');
-        break;
-      }
     }
-    
-    // Sort by priority and dependencies
-    return systems.sort((a, b) => {
-      // First, check if one system depends on the other
-      if (a.dependencies?.includes(b.name)) return 1;
-      if (b.dependencies?.includes(a.name)) return -1;
-      
-      // Then, sort by priority
-      return priorityValues[b.priority] - priorityValues[a.priority];
-    });
   }
-  
+
   /**
    * Update performance metrics for a system
    */
-  updatePerformanceMetrics(
+  private updatePerformanceMetrics(
     systemName: string,
     executionTime: number,
     entitiesProcessed: number
   ): void {
-    const metrics = this.systemPerformance.get(systemName);
-    if (!metrics) return;
+    const metrics = this.performanceMetrics.get(systemName);
     
-    // Update current execution metrics
+    if (!metrics) {
+      return;
+    }
+    
+    // Exponential moving average for execution time (alpha = 0.3)
+    const alpha = 0.3;
+    metrics.averageExecutionTime = 
+      alpha * executionTime + (1 - alpha) * metrics.averageExecutionTime;
+    
     metrics.executionTime = executionTime;
     metrics.entitiesProcessed = entitiesProcessed;
-    metrics.lastExecutionTimestamp = Date.now();
-    
-    // Update average (with simple moving average)
-    metrics.averageExecutionTime = (metrics.averageExecutionTime * 0.9) + (executionTime * 0.1);
+    metrics.lastExecutionTimestamp = performance.now();
   }
-  
-  /**
-   * Get performance metrics for a system
-   */
-  getSystemPerformanceMetrics(systemName: string): SystemPerformanceMetrics | undefined {
-    return this.systemPerformance.get(systemName);
-  }
-  
+
   /**
    * Get performance metrics for all systems
    */
   getPerformanceMetrics(): SystemPerformanceMetrics[] {
-    return Array.from(this.systemPerformance.values());
+    return Array.from(this.performanceMetrics.values());
   }
-  
+
+  /**
+   * Get performance metrics for a specific system
+   */
+  getSystemPerformanceMetrics(systemName: string): SystemPerformanceMetrics | undefined {
+    return this.performanceMetrics.get(systemName);
+  }
+
   /**
    * Clear all systems
    */
   clear(): void {
     this.systems.clear();
-    this.systemPerformance.clear();
+    this.systemExecutionOrder = [];
+    this.performanceMetrics.clear();
   }
 }

@@ -1,4 +1,4 @@
-import { Entity, EntityId, Component, SystemPriority, LODLevel } from './types';
+import { Entity, EntityId, Component, ComponentType, SystemPriority, LODLevel } from './types';
 import { EntityRegistry } from './EntityRegistry';
 import { ComponentManager } from './ComponentManager';
 
@@ -11,8 +11,8 @@ export interface SerializedEntity {
 
 export interface SerializedComponent {
   type: string;
-  priority: string;
-  lodLevel: string;
+  priority: SystemPriority;
+  lodLevel: LODLevel;
   enabled: boolean;
   [key: string]: any;
 }
@@ -41,9 +41,9 @@ export class SerializationSystem {
     for (const component of entity.components.values()) {
       const serializedComponent: SerializedComponent = {
         type: component.type,
-        priority: component.priority,
-        lodLevel: component.lodLevel,
-        enabled: component.enabled
+        priority: component.priority || 'medium',
+        lodLevel: component.lodLevel || 'medium',
+        enabled: component.enabled !== false // Default to true if not specified
       };
       
       // Copy all other properties (excluding internal ones)
@@ -99,15 +99,11 @@ export class SerializationSystem {
       delete componentData.lodLevel;
       delete componentData.enabled;
       
-      // Convert string values to the expected enum types
-      const priorityValue = this.convertPriority(serializedComponent.priority);
-      const lodLevelValue = this.convertLodLevel(serializedComponent.lodLevel);
-      
       const component: Component = {
         type: serializedComponent.type,
         entityId: entity.id,
-        priority: priorityValue,
-        lodLevel: lodLevelValue,
+        priority: serializedComponent.priority,
+        lodLevel: serializedComponent.lodLevel,
         enabled: serializedComponent.enabled,
         ...componentData
       };
@@ -119,43 +115,9 @@ export class SerializationSystem {
   }
   
   /**
-   * Convert priority string to SystemPriority enum
+   * Save the current state to local storage
    */
-  private convertPriority(priorityStr: string): SystemPriority {
-    switch (priorityStr) {
-      case 'high':
-        return 'high';
-      case 'medium':
-        return 'medium';
-      case 'low':
-        return 'low';
-      default:
-        console.warn(`Unknown priority: ${priorityStr}, using 'medium' as default`);
-        return 'medium';
-    }
-  }
-  
-  /**
-   * Convert LOD level string to LODLevel enum
-   */
-  private convertLodLevel(lodLevelStr: string): LODLevel {
-    switch (lodLevelStr) {
-      case 'high':
-        return 'high';
-      case 'medium':
-        return 'medium';
-      case 'low':
-        return 'low';
-      default:
-        console.warn(`Unknown LOD level: ${lodLevelStr}, using 'medium' as default`);
-        return 'medium';
-    }
-  }
-  
-  /**
-   * Serialize all entities in the registry
-   */
-  serializeAllEntities(): SerializedEntity[] {
+  saveToLocalStorage(key: string = 'ecs-state'): void {
     const serializedEntities: SerializedEntity[] = [];
     
     for (const entity of this.entityRegistry.getAllEntities()) {
@@ -165,71 +127,71 @@ export class SerializationSystem {
       }
     }
     
-    return serializedEntities;
+    localStorage.setItem(key, JSON.stringify(serializedEntities));
   }
   
   /**
-   * Deserialize multiple entities
+   * Load state from local storage
    */
-  deserializeEntities(serializedEntities: SerializedEntity[]): Entity[] {
-    const entities: Entity[] = [];
+  loadFromLocalStorage(key: string = 'ecs-state'): Entity[] {
+    const json = localStorage.getItem(key);
     
-    for (const serializedEntity of serializedEntities) {
-      const entity = this.deserializeEntity(serializedEntity);
-      if (entity) {
-        entities.push(entity);
-      }
+    if (!json) {
+      return [];
     }
     
-    return entities;
-  }
-  
-  /**
-   * Save all entities to localStorage
-   */
-  saveToLocalStorage(key: string = 'ecs-entities'): void {
-    const serialized = this.serializeAllEntities();
     try {
-      localStorage.setItem(key, JSON.stringify(serialized));
-    } catch (error) {
-      console.error('Failed to save entities to localStorage:', error);
-    }
-  }
-  
-  /**
-   * Load entities from localStorage
-   */
-  loadFromLocalStorage(key: string = 'ecs-entities'): Entity[] {
-    try {
-      const serializedData = localStorage.getItem(key);
-      if (!serializedData) {
-        return [];
+      const serializedEntities: SerializedEntity[] = JSON.parse(json);
+      const entities: Entity[] = [];
+      
+      for (const serializedEntity of serializedEntities) {
+        const entity = this.deserializeEntity(serializedEntity);
+        if (entity) {
+          entities.push(entity);
+        }
       }
       
-      const serializedEntities = JSON.parse(serializedData);
-      return this.deserializeEntities(serializedEntities);
+      return entities;
     } catch (error) {
-      console.error('Failed to load entities from localStorage:', error);
+      console.error('Error loading state from local storage:', error);
       return [];
     }
   }
   
   /**
-   * Export entities to a JSON string
+   * Export the current state to JSON
    */
   exportToJSON(): string {
-    return JSON.stringify(this.serializeAllEntities());
+    const serializedEntities: SerializedEntity[] = [];
+    
+    for (const entity of this.entityRegistry.getAllEntities()) {
+      const serializedEntity = this.serializeEntity(entity.id);
+      if (serializedEntity) {
+        serializedEntities.push(serializedEntity);
+      }
+    }
+    
+    return JSON.stringify(serializedEntities);
   }
   
   /**
-   * Import entities from a JSON string
+   * Import state from JSON
    */
   importFromJSON(json: string): Entity[] {
     try {
-      const serializedEntities = JSON.parse(json);
-      return this.deserializeEntities(serializedEntities);
+      const serializedEntities: SerializedEntity[] = JSON.parse(json);
+      const entities: Entity[] = [];
+      
+      for (const serializedEntity of serializedEntities) {
+        const entity = this.deserializeEntity(serializedEntity);
+        if (entity) {
+          entities.push(entity);
+        }
+      }
+      
+      return entities;
     } catch (error) {
-      console.error('Failed to import entities from JSON:', error);
+      console.error('Error importing state from JSON:', error);
       return [];
     }
   }
