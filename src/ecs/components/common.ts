@@ -208,4 +208,12 @@ export function createHealthComponent(
 }
 
 // Export the component types for use in type checking
-export { PositionComponent, VelocityComponent, RotationComponent, ScaleComponent, RenderableComponent, ColliderComponent, HealthComponent };
+export type { 
+  PositionComponent, 
+  VelocityComponent, 
+  RotationComponent, 
+  ScaleComponent, 
+  RenderableComponent, 
+  ColliderComponent, 
+  HealthComponent 
+};

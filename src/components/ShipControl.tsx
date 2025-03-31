@@ -3,10 +3,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Progress } from "./ui/progress";
 import { Separator } from "./ui/separator";
+import { ShipEntity, Weather, AmmoType } from "../types/Game";
 
 interface ShipControlProps {
+  // Add properties expected by GameBoard.tsx
+  ship?: ShipEntity;
+  windDirection?: number;
+  windSpeed?: number;
+  weather?: Weather;
   onCourseChange?: (course: number) => void;
   onSpeedChange?: (speed: number) => void;
+  onSailConfigChange?: (config: 'full' | 'battle' | 'reduced' | 'minimal' | 'none') => void;
+  onFireCannons?: (side: 'port' | 'starboard' | 'bow' | 'stern') => void;
+  onRepair?: (type: 'hull' | 'rigging' | 'mast' | 'rudder' | 'fire') => void;
+  onAmmoChange?: (side: 'port' | 'starboard' | 'bow' | 'stern', ammo: AmmoType) => void;
+
+  // Original properties (keep for backward compatibility)
   initialCourse?: number;
   initialSpeed?: number;
   maxSpeed?: number;
@@ -17,8 +29,16 @@ interface ShipControlProps {
 }
 
 const ShipControl: React.FC<ShipControlProps> = ({
+  ship,
+  windDirection,
+  windSpeed,
+  weather,
   onCourseChange,
   onSpeedChange,
+  onSailConfigChange,
+  onFireCannons,
+  onRepair,
+  onAmmoChange,
   initialCourse = 0,
   initialSpeed = 0,
   maxSpeed = 30,
@@ -27,8 +47,9 @@ const ShipControl: React.FC<ShipControlProps> = ({
   currentHealth = 100,
   currentEnergy = 80,
 }) => {
-  const [course, setCourse] = useState(initialCourse);
-  const [speed, setSpeed] = useState(initialSpeed);
+  // Use ship properties if available, otherwise fall back to the original props
+  const course = ship?.rotation ?? initialCourse;
+  const speed = ship?.currentSpeed ?? initialSpeed;
   const [isDragging, setIsDragging] = useState(false);
   const dialRef = useRef<HTMLDivElement>(null);
 
@@ -47,8 +68,9 @@ const ShipControl: React.FC<ShipControlProps> = ({
     // and ensure it's between 0-359 degrees
     let angleDeg = (Math.round(angleRad * (180 / Math.PI) + 90) + 360) % 360;
     
-    setCourse(angleDeg);
-    onCourseChange?.(angleDeg);
+    if (onCourseChange) {
+      onCourseChange(angleDeg);
+    }
   };
 
   // Set up event listeners for dragging
@@ -74,15 +96,26 @@ const ShipControl: React.FC<ShipControlProps> = ({
 
   // Handle speed changes
   const changeSpeed = (increment: number) => {
-    const newSpeed = Math.max(0, Math.min(maxSpeed, speed + increment));
-    setSpeed(newSpeed);
-    onSpeedChange?.(newSpeed);
+    const effectiveMaxSpeed = ship?.maxSpeed ?? maxSpeed;
+    const newSpeed = Math.max(0, Math.min(effectiveMaxSpeed, (ship?.currentSpeed ?? speed) + increment));
+    
+    if (onSpeedChange) {
+      onSpeedChange(newSpeed);
+    }
   };
+
+  // Use ship health values if available
+  const healthMax = ship?.damageState?.hullIntegrity ?? maxHealth;
+  const healthCurrent = ship?.damageState?.hullIntegrity ?? currentHealth;
+  
+  // Use ship energy values if available
+  const energyMax = maxEnergy; 
+  const energyCurrent = currentEnergy;
 
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>Ship Control</CardTitle>
+        <CardTitle>{ship?.name ?? "Ship Control"}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Course control dial */}
@@ -133,14 +166,14 @@ const ShipControl: React.FC<ShipControlProps> = ({
             <div className="h-2 flex-1 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
               <div 
                 className="h-full bg-blue-500 transition-all duration-300" 
-                style={{ width: `${(speed / maxSpeed) * 100}%` }}
+                style={{ width: `${(speed / (ship?.maxSpeed || maxSpeed)) * 100}%` }}
               />
             </div>
             <Button 
               variant="outline" 
               size="sm" 
               onClick={() => changeSpeed(1)}
-              disabled={speed >= maxSpeed}
+              disabled={speed >= (ship?.maxSpeed || maxSpeed)}
             >
               +
             </Button>
@@ -156,18 +189,18 @@ const ShipControl: React.FC<ShipControlProps> = ({
           <div className="space-y-2">
             <div className="flex justify-between text-xs">
               <span>Hull Integrity</span>
-              <span>{currentHealth}/{maxHealth}</span>
+              <span>{Math.round(healthCurrent)}/{healthMax}</span>
             </div>
-            <Progress value={(currentHealth / maxHealth) * 100} className="h-2" />
+            <Progress value={(healthCurrent / healthMax) * 100} className="h-2" />
           </div>
           
           <div className="space-y-2">
             <div className="flex justify-between text-xs">
               <span>Energy</span>
-              <span>{currentEnergy}/{maxEnergy}</span>
+              <span>{energyCurrent}/{energyMax}</span>
             </div>
             <Progress 
-              value={(currentEnergy / maxEnergy) * 100} 
+              value={(energyCurrent / energyMax) * 100} 
               className="h-2 bg-slate-200 dark:bg-slate-700"
             />
           </div>

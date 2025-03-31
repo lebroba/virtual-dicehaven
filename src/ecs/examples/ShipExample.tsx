@@ -27,7 +27,8 @@ export const ShipExample: React.FC = () => {
     addComponent(shipEntity.id, createPositionComponent(shipEntity.id, 0, 0));
     addComponent(shipEntity.id, createVelocityComponent(shipEntity.id, 0, 0));
     addComponent(shipEntity.id, createRotationComponent(shipEntity.id, 0));
-    addComponent(shipEntity.id, createShipComponent(shipEntity.id, 'Frigate', 'British'));
+    // Changed from "Frigate" to "FifthRate" which is a valid ship class
+    addComponent(shipEntity.id, createShipComponent(shipEntity.id, 'FifthRate', 'British'));
     
     // Add a renderable component for visualization
     addComponent(shipEntity.id, createRenderableComponent(shipEntity.id, {

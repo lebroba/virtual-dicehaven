@@ -176,4 +176,4 @@ export function createShipComponent(
 }
 
 // Export the component type for use in type checking
-export { ShipComponent };
+export type { ShipComponent };
