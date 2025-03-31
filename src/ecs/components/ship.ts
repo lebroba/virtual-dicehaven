@@ -1,57 +1,4 @@
-
-import { Component, EntityId } from '../types';
-
-/**
- * Ship component for naval entities
- */
-export interface ShipComponent extends Component {
-  type: 'ship';
-  shipClass: 'FirstRate' | 'SecondRate' | 'ThirdRate' | 'FourthRate' | 'FifthRate' | 'SixthRate' | 'Sloop' | 'Cutter' | 'Fireship';
-  hull: {
-    current: number;
-    max: number;
-  };
-  crew: {
-    current: number;
-    max: number;
-  };
-  supplies: {
-    current: number;
-    max: number;
-  };
-  cannons: {
-    port: number;
-    starboard: number;
-    bow: number;
-    stern: number;
-  };
-  sails: {
-    mainSails: number; // 0-100%
-    topSails: number; // 0-100%
-    jibs: number; // 0-100%
-    spanker: number; // 0-100%
-    configuration: 'full' | 'battle' | 'reduced' | 'minimal' | 'none';
-  };
-  damage: {
-    hull: number;
-    rigging: number;
-    rudder: number;
-    masts: {
-      fore: number;
-      main: number;
-      mizzen: number;
-    };
-    onFire: boolean;
-    floodingRate: number;
-  };
-  speed: {
-    current: number;
-    max: number;
-  };
-  nationality: string;
-  experienceLevel: number; // 1-5
-  isAI: boolean;
-}
+import { EntityId, ShipComponent } from '../types';
 
 /**
  * Create a ship component
@@ -64,7 +11,11 @@ export function createShipComponent(
   entityId: EntityId,
   shipClass: ShipComponent['shipClass'] = 'Sloop',
   nationality: string = 'British',
-  options: Partial<Pick<Component, 'priority' | 'lodLevel' | 'enabled'>> = {}
+  options: {
+    priority?: 'high' | 'medium' | 'low',
+    lodLevel?: 'high' | 'medium' | 'low',
+    enabled?: boolean
+  } = {}
 ): ShipComponent {
   // Set default values based on ship class
   let hullMax = 100;

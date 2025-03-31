@@ -3,6 +3,7 @@
 export * from './types';
 export * from './ECS';
 export * from './EntityManager';
+export * from './EntityRegistry';
 export * from './SystemManager';
 export * from './components/common';
 export * from './components/ship';
