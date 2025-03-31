@@ -104,6 +104,45 @@ const ShipControl: React.FC<ShipControlProps> = ({
     onAmmoChange(side, ammo);
   };
   
+  // Determine color based on damage level
+  const getDamageColor = (value: number): string => {
+    if (value > 70) return "text-green-500";
+    if (value > 40) return "text-yellow-500";
+    return "text-red-500";
+  };
+  
+  // Calculate cannon reload status (default to "Ready" if no cannons array)
+  const getCannonStatus = (side: 'port' | 'starboard' | 'bow' | 'stern'): [number, string] => {
+    if (!ship.cannons) return [100, "Ready"];
+    
+    const cannonsOnSide = ship.cannons.filter(c => c.location === side);
+    if (cannonsOnSide.length === 0) return [0, "N/A"];
+    
+    const readyCannons = cannonsOnSide.filter(c => c.status === 'ready').length;
+    const totalCannons = cannonsOnSide.length;
+    const percentage = (readyCannons / totalCannons) * 100;
+    
+    if (percentage === 100) return [100, "Ready"];
+    if (percentage === 0) return [0, "Reloading"];
+    return [percentage, `${readyCannons}/${totalCannons} Ready`];
+  };
+
+  // Ship status messages based on condition
+  const getStatusMessage = (): string => {
+    if (ship.status === 'sinking') return "SINKING!";
+    if (ship.damageState.onFire) return "ON FIRE!";
+    if (ship.damageState.floodingRate > 0) return "TAKING ON WATER!";
+    if (ship.damageState.hullIntegrity < 30) return "CRITICAL DAMAGE!";
+    if (ship.currentCrew < ship.maxCrew * 0.3) return "CREW DEPLETED!";
+    
+    if (ship.status === 'boarding') return "BOARDING ACTION";
+    if (ship.status === 'combat') return "ENGAGED IN COMBAT";
+    if (ship.status === 'repairing') return "MAKING REPAIRS";
+    if (ship.status === 'moving' && ship.currentSpeed > 0) return "UNDERWAY";
+    
+    return "STANDING BY";
+  };
+  
   return (
     <Card>
       <CardHeader>
@@ -166,7 +205,7 @@ const ShipControl: React.FC<ShipControlProps> = ({
                 <label className="text-sm font-medium">Speed</label>
                 <Slider
                   value={[ship.currentSpeed]}
-                  max={10}
+                  max={ship.maxSpeed}
                   step={1}
                   onValueChange={handleSpeedChange}
                   className="mt-2"
@@ -182,7 +221,7 @@ const ShipControl: React.FC<ShipControlProps> = ({
                 <label className="text-sm font-medium">Sail Configuration</label>
                 <div className="grid grid-cols-5 gap-1 mt-2">
                   <Button 
-                    variant={ship.sailConfiguration === 'full' ? 'default' : 'outline'} 
+                    variant={ship.sailConfiguration?.currentConfig === 'full' ? 'default' : 'outline'} 
                     size="sm" 
                     onClick={() => handleSailConfig('full')}
                     className="text-xs"
@@ -190,7 +229,7 @@ const ShipControl: React.FC<ShipControlProps> = ({
                     Full
                   </Button>
                   <Button 
-                    variant={ship.sailConfiguration === 'battle' ? 'default' : 'outline'} 
+                    variant={ship.sailConfiguration?.currentConfig === 'battle' ? 'default' : 'outline'} 
                     size="sm" 
                     onClick={() => handleSailConfig('battle')}
                     className="text-xs"
@@ -198,7 +237,7 @@ const ShipControl: React.FC<ShipControlProps> = ({
                     Battle
                   </Button>
                   <Button 
-                    variant={ship.sailConfiguration === 'reduced' ? 'default' : 'outline'} 
+                    variant={ship.sailConfiguration?.currentConfig === 'reduced' ? 'default' : 'outline'} 
                     size="sm" 
                     onClick={() => handleSailConfig('reduced')}
                     className="text-xs"
@@ -206,7 +245,7 @@ const ShipControl: React.FC<ShipControlProps> = ({
                     Reduced
                   </Button>
                   <Button 
-                    variant={ship.sailConfiguration === 'minimal' ? 'default' : 'outline'} 
+                    variant={ship.sailConfiguration?.currentConfig === 'minimal' ? 'default' : 'outline'} 
                     size="sm" 
                     onClick={() => handleSailConfig('minimal')}
                     className="text-xs"
@@ -214,7 +253,7 @@ const ShipControl: React.FC<ShipControlProps> = ({
                     Minimal
                   </Button>
                   <Button 
-                    variant={ship.sailConfiguration === 'none' ? 'default' : 'outline'} 
+                    variant={ship.sailConfiguration?.currentConfig === 'none' ? 'default' : 'outline'} 
                     size="sm" 
                     onClick={() => handleSailConfig('none')}
                     className="text-xs"
@@ -222,6 +261,13 @@ const ShipControl: React.FC<ShipControlProps> = ({
                     None
                   </Button>
                 </div>
+                
+                {ship.sailConfiguration && (
+                  <div className="text-xs text-center mt-2 text-slate-500">
+                    <p>Main: {ship.sailConfiguration.mainSails}% • Top: {ship.sailConfiguration.topSails}%</p>
+                    <p>Jibs: {ship.sailConfiguration.jibs}% • Spanker: {ship.sailConfiguration.spanker}%</p>
+                  </div>
+                )}
               </div>
             </div>
           </TabsContent>
@@ -334,6 +380,29 @@ const ShipControl: React.FC<ShipControlProps> = ({
                   </Button>
                 </div>
               </div>
+              
+              {/* Crew & Boarding */}
+              <div className="space-y-2 mt-4">
+                <div className="flex justify-between text-sm">
+                  <span>Crew Complement</span>
+                  <span>{ship.currentCrew}/{ship.maxCrew} sailors</span>
+                </div>
+                <div className="w-full bg-slate-200 rounded-full h-2 mt-1">
+                  <div 
+                    className="bg-green-500 h-2 rounded-full" 
+                    style={{ width: `${(ship.currentCrew / ship.maxCrew) * 100}%` }}
+                  />
+                </div>
+                <div className="flex justify-end mt-2">
+                  <Button 
+                    variant="destructive"
+                    size="sm"
+                    disabled={ship.currentCrew < ship.maxCrew * 0.3}
+                  >
+                    Prepare to Board
+                  </Button>
+                </div>
+              </div>
             </div>
           </TabsContent>
           
@@ -360,6 +429,7 @@ const ShipControl: React.FC<ShipControlProps> = ({
                   className="w-full" 
                   onClick={() => onRepair('fire')}
                   variant="destructive"
+                  disabled={!ship.damageState.onFire}
                 >
                   Extinguish Fires
                 </Button>
@@ -384,7 +454,78 @@ const ShipControl: React.FC<ShipControlProps> = ({
                     />
                   </div>
                 </div>
+                
+                {ship.damageState.masts && (
+                  <div className="col-span-2 mt-2">
+                    <div className="text-sm font-medium mb-1">Masts</div>
+                    <div className="grid grid-cols-3 gap-1">
+                      <div>
+                        <div className="text-xs">Fore</div>
+                        <div className="w-full bg-slate-200 rounded-full h-1 mt-1">
+                          <div 
+                            className="bg-green-500 h-1 rounded-full" 
+                            style={{ width: `${ship.damageState.masts.fore}%` }}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs">Main</div>
+                        <div className="w-full bg-slate-200 rounded-full h-1 mt-1">
+                          <div 
+                            className="bg-green-500 h-1 rounded-full" 
+                            style={{ width: `${ship.damageState.masts.main}%` }}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs">Mizzen</div>
+                        <div className="w-full bg-slate-200 rounded-full h-1 mt-1">
+                          <div 
+                            className="bg-green-500 h-1 rounded-full" 
+                            style={{ width: `${ship.damageState.masts.mizzen}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="col-span-2 mt-2">
+                  <div className="text-sm font-medium">Rudder</div>
+                  <div className="w-full bg-slate-200 rounded-full h-2 mt-1">
+                    <div 
+                      className="bg-green-500 h-2 rounded-full" 
+                      style={{ width: `${100 - ship.damageState.rudderDamage}%` }}
+                    />
+                  </div>
+                </div>
               </div>
+              
+              {ship.damageState.onFire && (
+                <div className="p-2 bg-red-100 rounded mt-4">
+                  <div className="text-red-600 font-bold">Ship On Fire!</div>
+                  <Button 
+                    className="w-full mt-2" 
+                    onClick={() => onRepair('fire')}
+                    variant="destructive"
+                  >
+                    Fight Fire!
+                  </Button>
+                </div>
+              )}
+              
+              {ship.damageState.floodingRate > 0 && (
+                <div className="p-2 bg-blue-100 rounded mt-4">
+                  <div className="text-blue-600 font-bold">Taking on Water - Rate: {ship.damageState.floodingRate}</div>
+                  <Button 
+                    className="w-full mt-2" 
+                    onClick={() => onRepair('hull')}
+                    variant="secondary"
+                  >
+                    Man the Pumps!
+                  </Button>
+                </div>
+              )}
             </div>
           </TabsContent>
         </Tabs>

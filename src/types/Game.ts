@@ -1,5 +1,5 @@
 
-export type ShipClass = 'FirstRate' | 'SecondRate' | 'ThirdRate' | 'FourthRate' | 'FifthRate' | 'SixthRate' | 'Sloop' | 'Cutter';
+export type ShipClass = 'FirstRate' | 'SecondRate' | 'ThirdRate' | 'FourthRate' | 'FifthRate' | 'SixthRate' | 'Sloop' | 'Cutter' | 'Fireship';
 export type Weather = 'clear' | 'cloudy' | 'rain' | 'fog';
 export type AmmoType = 'roundShot' | 'chainShot' | 'grapeShot' | 'doubleShot';
 
@@ -30,18 +30,43 @@ export interface ShipEntity {
   position: Position;
   rotation: number;
   currentSpeed: number;
-  status: 'idle' | 'moving' | 'combat' | 'boarding' | 'boarded' | 'sinking';
+  maxSpeed: number;
+  status: 'idle' | 'moving' | 'combat' | 'boarding' | 'boarded' | 'sinking' | 'repairing';
   shipClass: ShipClass;
   name: string;
+  nationality: string;
   damageState: {
     hullIntegrity: number;
     mastDamage: number;
     riggingDamage: number;
     crewInjuries: number;
     rudderDamage: number;
+    onFire: boolean;
+    floodingRate: number;
+    masts: {
+      fore: number;
+      main: number;
+      mizzen: number;
+    };
+    crewCasualties: number;
   };
+  currentCrew: number;
+  maxCrew: number;
+  currentSupplies: number;
+  maxSupplies: number;
+  experienceLevel: number;
   visibilityRange: number;
-  sailConfiguration?: 'full' | 'battle' | 'reduced' | 'minimal' | 'none';
+  sailConfiguration: {
+    currentConfig: 'full' | 'battle' | 'reduced' | 'minimal' | 'none';
+    mainSails: number;
+    topSails: number;
+    jibs: number;
+    spanker: number;
+  };
+  cannons?: Array<{
+    location: 'port' | 'starboard' | 'bow' | 'stern';
+    status: 'ready' | 'reloading' | 'disabled';
+  }>;
 }
 
 export interface GameConfig {
@@ -80,3 +105,11 @@ export interface ShipAttributes {
     stern: number;
   };
 }
+
+export interface EntityEvent {
+  type: string;
+  sourceEntityId: string;
+  targetEntityId?: string;
+  data?: any;
+}
+

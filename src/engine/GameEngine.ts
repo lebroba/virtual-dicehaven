@@ -1,99 +1,15 @@
-
 // Fix the import path
 import { EventSystem } from "../ecs/EventSystem";
-
-// Define the types needed for the GameEngine
-interface GameState {
-  turn: number;
-  teams: Team[];
-  entities: any[];
-  weather: Weather;
-  windDirection: number;
-  windSpeed: number;
-}
-
-interface Team {
-  id: string;
-  name: string;
-  nationality: string;
-  color: string;
-  isPlayerControlled: boolean;
-  aiPersonality?: string;
-  resources: {
-    gold: number;
-    supplies: number;
-    ammunition: number;
-    repairMaterials: number;
-  };
-}
-
-type Weather = 'clear' | 'cloudy' | 'rain' | 'fog';
-
-interface ShipEntity {
-  visibilityRange: number;
-  id: string;
-  type: string;
-  teamId: string;
-  position: { x: number, y: number };
-  rotation: number;
-  status: string;
-  shipClass: string;
-  currentSpeed: number;
-  damageState: { hullIntegrity: number };
-  name: string;
-}
-
-interface GameConfig {
-  gridSize: number;
-  tickRate: number;
-  initialWeather: Weather;
-  initialWindDirection: number;
-  initialWindSpeed: number;
-  timeOfDay: string;
-  mapType: string;
-  gameMode: string;
-  victoryCondition: string;
-}
-
-interface WeatherEvent {
-  type: string;
-  previousWeather: any;
-  newWeather: any;
-  time: number;
-  data: {
-    newWindDirection?: number;
-    newWindSpeed?: number;
-  };
-}
-
-interface CombatEvent {
-  type: string;
-  attacker: string;
-  defender: string;
-  time: number;
-  data: {
-    side: "port" | "starboard" | "bow" | "stern";
-    ammunition: number;
-  };
-}
-
-interface DamageEvent {
-  type: string;
-  shipId: string;
-  location: "hull" | "mast" | "rigging" | "crew" | "rudder";
-  time: number;
-  data: {
-    amount: number;
-    isCritical: boolean;
-  };
-}
-
-interface Position {
-  x: number;
-  y: number;
-}
-
-type ShipClass = 'FirstRate' | 'SecondRate' | 'ThirdRate' | 'FourthRate' | 'FifthRate' | 'SixthRate' | 'Sloop' | 'Cutter';
+import { 
+  GameState, 
+  ShipClass, 
+  Position, 
+  Team, 
+  Weather, 
+  GameConfig, 
+  ShipEntity as ShipEntityType,
+  EntityEvent
+} from "../types/Game";
 
 export class GameEngine {
   private gameState: GameState;
@@ -180,7 +96,7 @@ export class GameEngine {
     const shipId = `ship_${Math.random().toString(36).substr(2, 9)}`;
     
     // Create a new ship entity
-    const ship = {
+    const ship: ShipEntityType = {
       id: shipId,
       type: 'ship',
       teamId: teamId,
@@ -188,16 +104,44 @@ export class GameEngine {
       position: { ...position },
       rotation: 0,
       currentSpeed: 0,
+      maxSpeed: 10,
       status: 'idle',
       name: this.generateShipName(nationality, shipClass),
+      nationality: nationality,
       damageState: {
         hullIntegrity: 100,
         mastDamage: 0,
         riggingDamage: 0,
         crewInjuries: 0,
-        rudderDamage: 0
+        rudderDamage: 0,
+        onFire: false,
+        floodingRate: 0,
+        masts: {
+          fore: 100,
+          main: 100,
+          mizzen: 100
+        },
+        crewCasualties: 0
       },
-      visibilityRange: 500
+      visibilityRange: 500,
+      currentCrew: 100,
+      maxCrew: 100,
+      currentSupplies: 100,
+      maxSupplies: 100,
+      experienceLevel: 3,
+      sailConfiguration: {
+        currentConfig: 'full',
+        mainSails: 100,
+        topSails: 100,
+        jibs: 100,
+        spanker: 100
+      },
+      cannons: [
+        { location: 'port', status: 'ready' },
+        { location: 'starboard', status: 'ready' },
+        { location: 'bow', status: 'ready' },
+        { location: 'stern', status: 'ready' }
+      ]
     };
     
     // Add to game state entities
@@ -240,7 +184,7 @@ export class GameEngine {
   setCourseAndSpeed(shipId: string, course: number, speed: number): void {
     const shipIndex = this.gameState.entities.findIndex(e => e.id === shipId && e.type === 'ship');
     if (shipIndex !== -1) {
-      const ship = this.gameState.entities[shipIndex];
+      const ship = this.gameState.entities[shipIndex] as ShipEntityType;
       ship.rotation = course;
       ship.currentSpeed = speed;
       ship.status = speed > 0 ? 'moving' : 'idle';
@@ -256,8 +200,18 @@ export class GameEngine {
   ): void {
     const shipIndex = this.gameState.entities.findIndex(e => e.id === shipId && e.type === 'ship');
     if (shipIndex !== -1) {
-      const ship = this.gameState.entities[shipIndex];
-      ship.sailConfiguration = config;
+      const ship = this.gameState.entities[shipIndex] as ShipEntityType;
+      if (ship.sailConfiguration) {
+        ship.sailConfiguration.currentConfig = config;
+      } else {
+        ship.sailConfiguration = {
+          currentConfig: config,
+          mainSails: 100,
+          topSails: 100,
+          jibs: 100,
+          spanker: 100
+        };
+      }
       
       // Adjust speed based on sail configuration
       const maxSpeedMultipliers = {
@@ -290,11 +244,10 @@ export class GameEngine {
       // Create a combat event
       this.eventBus.dispatchEvent({
         type: "cannonFire",
-        attacker: shipId,
-        defender: targetId || "",
-        time: Date.now(),
+        sourceEntityId: shipId,
+        targetEntityId: targetId || "",
         data: { side, ammunition: 10 }
-      } as CombatEvent);
+      } as EntityEvent);
       
       this.notifySubscribers();
     }
@@ -314,9 +267,10 @@ export class GameEngine {
       
       this.eventBus.dispatchEvent({
         type: "boarding",
-        time: Date.now(),
-        data: { attackerId, defenderId, result: "pending" }
-      });
+        sourceEntityId: attackerId,
+        targetEntityId: defenderId,
+        data: { result: "pending" }
+      } as EntityEvent);
       
       this.notifySubscribers();
     }
@@ -329,7 +283,8 @@ export class GameEngine {
   ): void {
     const shipIndex = this.gameState.entities.findIndex(e => e.id === shipId && e.type === 'ship');
     if (shipIndex !== -1) {
-      const ship = this.gameState.entities[shipIndex];
+      const ship = this.gameState.entities[shipIndex] as ShipEntityType;
+      ship.status = 'repairing';
       
       switch(repairType) {
         case 'hull':
@@ -345,15 +300,15 @@ export class GameEngine {
           ship.damageState.rudderDamage = Math.max(ship.damageState.rudderDamage - 10, 0);
           break;
         case 'fire':
-          ship.onFire = false;
+          ship.damageState.onFire = false;
           break;
       }
       
       this.eventBus.dispatchEvent({
         type: "repair",
-        time: Date.now(),
-        data: { entityId: shipId, repairType, amount: 10 }
-      });
+        sourceEntityId: shipId,
+        data: { repairType, amount: 10 }
+      } as EntityEvent);
       
       this.notifySubscribers();
     }
@@ -371,12 +326,13 @@ export class GameEngine {
     this.weather.windDirection = direction;
 
     this.eventBus.dispatchEvent({
-      type: "windChange", 
-      previousWeather: this.weather,
-      newWeather: this.weather,
-      time: Date.now(),
-      data: { newWindDirection: direction }
-    } as WeatherEvent);
+      type: "windChange",
+      sourceEntityId: "weather-system",
+      data: { 
+        previousDirection: this.weather.windDirection,
+        newDirection: direction 
+      }
+    } as EntityEvent);
     
     this.notifySubscribers();
   }
@@ -388,11 +344,12 @@ export class GameEngine {
 
     this.eventBus.dispatchEvent({
       type: "windChange",
-      previousWeather: this.weather,
-      newWeather: this.weather,
-      time: Date.now(),
-      data: { newWindSpeed: speed }
-    } as WeatherEvent);
+      sourceEntityId: "weather-system",
+      data: { 
+        previousSpeed: this.weather.windSpeed,
+        newSpeed: speed 
+      }
+    } as EntityEvent);
     
     this.notifySubscribers();
   }
@@ -409,7 +366,7 @@ export class GameEngine {
   damageShip(entityId: string, damageType: "hull" | "mast" | "rigging" | "crew" | "rudder", amount: number, isCritical: boolean): void {
     const shipIndex = this.gameState.entities.findIndex(e => e.id === entityId && e.type === 'ship');
     if (shipIndex !== -1) {
-      const ship = this.gameState.entities[shipIndex];
+      const ship = this.gameState.entities[shipIndex] as ShipEntityType;
       
       switch(damageType) {
         case 'hull':
@@ -434,11 +391,10 @@ export class GameEngine {
       
       this.eventBus.dispatchEvent({
         type: "shipDamage",
-        shipId: entityId,
-        location: damageType,
-        time: Date.now(),
-        data: { amount, isCritical }
-      } as DamageEvent);
+        sourceEntityId: "combat-system",
+        targetEntityId: entityId,
+        data: { damageType, amount, isCritical }
+      } as EntityEvent);
       
       this.notifySubscribers();
     }
