@@ -1,6 +1,5 @@
 
-import { System } from '../types';
-import { PositionComponent, RenderableComponent, RotationComponent, ScaleComponent } from '../types';
+import { System, Entity, PositionComponent, RenderableComponent, RotationComponent, ScaleComponent } from '../types';
 
 /**
  * RenderSystem handles rendering entities on the game board
@@ -10,7 +9,7 @@ export function createRenderSystem(renderer: any): System {
     name: 'render',
     priority: 'high',
     enabled: true,
-    execute: (deltaTime, entities) => {
+    execute: (deltaTime: number, entities: Entity[]) => {
       // Find entities with renderable components
       const renderableEntities = entities.filter(entity => {
         return entity.active && 

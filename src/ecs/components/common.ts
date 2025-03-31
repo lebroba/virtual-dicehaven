@@ -1,5 +1,15 @@
-
-import { EntityId, PositionComponent, VelocityComponent, RotationComponent, ScaleComponent, RenderableComponent, ColliderComponent, HealthComponent } from '../types';
+import { 
+  EntityId, 
+  PositionComponent, 
+  VelocityComponent, 
+  RotationComponent, 
+  ScaleComponent, 
+  RenderableComponent, 
+  ColliderComponent, 
+  HealthComponent,
+  SystemPriority,
+  LODLevel
+} from '../types';
 
 /**
  * Create a position component
@@ -10,8 +20,8 @@ export function createPositionComponent(
   y: number = 0,
   z?: number,
   options: {
-    priority?: 'high' | 'medium' | 'low',
-    lodLevel?: 'high' | 'medium' | 'low',
+    priority?: SystemPriority,
+    lodLevel?: LODLevel,
     enabled?: boolean
   } = {}
 ): PositionComponent {
@@ -36,8 +46,8 @@ export function createVelocityComponent(
   vy: number = 0,
   vz?: number,
   options: {
-    priority?: 'high' | 'medium' | 'low',
-    lodLevel?: 'high' | 'medium' | 'low',
+    priority?: SystemPriority,
+    lodLevel?: LODLevel,
     enabled?: boolean
   } = {}
 ): VelocityComponent {
@@ -63,8 +73,8 @@ export function createRotationComponent(
     x?: number,
     y?: number,
     z?: number,
-    priority?: 'high' | 'medium' | 'low',
-    lodLevel?: 'high' | 'medium' | 'low',
+    priority?: SystemPriority,
+    lodLevel?: LODLevel,
     enabled?: boolean
   } = {}
 ): RotationComponent {
@@ -90,8 +100,8 @@ export function createScaleComponent(
   y: number = 1,
   z?: number,
   options: {
-    priority?: 'high' | 'medium' | 'low',
-    lodLevel?: 'high' | 'medium' | 'low',
+    priority?: SystemPriority,
+    lodLevel?: LODLevel,
     enabled?: boolean
   } = {}
 ): ScaleComponent {
@@ -121,8 +131,8 @@ export function createRenderableComponent(
     zIndex?: number,
     renderLayer?: string,
     customRenderData?: any,
-    priority?: 'high' | 'medium' | 'low',
-    lodLevel?: 'high' | 'medium' | 'low',
+    priority?: SystemPriority,
+    lodLevel?: LODLevel,
     enabled?: boolean
   } = {}
 ): RenderableComponent {
@@ -157,8 +167,8 @@ export function createColliderComponent(
     isTrigger?: boolean,
     collisionLayer?: number,
     collisionMask?: number,
-    priority?: 'high' | 'medium' | 'low',
-    lodLevel?: 'high' | 'medium' | 'low',
+    priority?: SystemPriority,
+    lodLevel?: LODLevel,
     enabled?: boolean
   } = {}
 ): ColliderComponent {
@@ -189,8 +199,8 @@ export function createHealthComponent(
     current?: number,
     regeneration?: number,
     invincible?: boolean,
-    priority?: 'high' | 'medium' | 'low',
-    lodLevel?: 'high' | 'medium' | 'low',
+    priority?: SystemPriority,
+    lodLevel?: LODLevel,
     enabled?: boolean
   } = {}
 ): HealthComponent {

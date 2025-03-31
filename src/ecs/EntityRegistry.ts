@@ -1,8 +1,9 @@
-import { Entity, EntityId, EntityQuery, Component, ComponentType } from './types';
+
+import { EntityId, EntityQuery, Component, ComponentType, Entity } from './types';
 
 export class EntityRegistry {
   private entities: Map<EntityId, Entity> = new Map();
-  private nextEntityId: EntityId = 1;
+  private nextEntityId: number = 1;
   
   constructor() {}
   
@@ -18,8 +19,11 @@ export class EntityRegistry {
    * Create a new entity
    */
   createEntity(tags: string[] = []): Entity {
+    const id: number = this.nextEntityId;
+    this.nextEntityId += 1;
+    
     const entity: Entity = {
-      id: this.nextEntityId++,
+      id,
       components: new Map(),
       active: true,
       tags: new Set(tags)

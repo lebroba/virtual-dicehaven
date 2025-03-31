@@ -26,7 +26,7 @@ export const useECS = () => {
   // Create a new entity
   const createEntity = useCallback(() => {
     const entity = ecs.createEntity();
-    setEntities([...ecs.queryEntities({ active: true })]);
+    setEntities([...ecs.getEntityRegistry().queryEntities({ active: true })]);
     return entity;
   }, []);
   
@@ -34,7 +34,7 @@ export const useECS = () => {
   const removeEntity = useCallback((entityId: number) => {
     const result = ecs.removeEntity(entityId);
     if (result) {
-      setEntities([...ecs.queryEntities({ active: true })]);
+      setEntities([...ecs.getEntityRegistry().queryEntities({ active: true })]);
     }
     return result;
   }, []);
@@ -48,7 +48,7 @@ export const useECS = () => {
   const addComponent = useCallback((entityId: number, component: Component) => {
     const result = ecs.addComponent(entityId, component);
     if (result) {
-      setEntities([...ecs.queryEntities({ active: true })]);
+      setEntities([...ecs.getEntityRegistry().queryEntities({ active: true })]);
     }
     return result;
   }, []);
@@ -68,7 +68,7 @@ export const useECS = () => {
   
   // Update the entities list
   const updateEntities = useCallback(() => {
-    setEntities([...ecs.queryEntities({ active: true })]);
+    setEntities([...ecs.getEntityRegistry().queryEntities({ active: true })]);
   }, []);
   
   // Register a system
@@ -84,7 +84,7 @@ export const useECS = () => {
   // Load a saved state
   const loadState = useCallback((key?: string) => {
     const loadedEntities = ecs.loadState(key);
-    setEntities([...ecs.queryEntities({ active: true })]);
+    setEntities([...ecs.getEntityRegistry().queryEntities({ active: true })]);
     return loadedEntities;
   }, []);
   
@@ -96,7 +96,7 @@ export const useECS = () => {
   // Import state from JSON
   const importState = useCallback((json: string) => {
     const entities = ecs.importFromJSON(json);
-    setEntities([...ecs.queryEntities({ active: true })]);
+    setEntities([...ecs.getEntityRegistry().queryEntities({ active: true })]);
     return entities;
   }, []);
   

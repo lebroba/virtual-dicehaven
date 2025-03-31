@@ -20,28 +20,42 @@ export interface System {
   priority: 'high' | 'medium' | 'low';
   enabled: boolean;
   dependencies?: string[];
-  execute: (deltaTime: number, entities: any[]) => void;
+  execute: (deltaTime: number, entities: Entity[]) => void;
+  executeBeforeUpdate?: () => void;
+  executeAfterUpdate?: () => void;
 }
 
 export interface PositionComponent {
+  type: string;
   entityId: EntityId;
   x: number;
   y: number;
   z?: number;
+  priority?: SystemPriority;
+  lodLevel?: LODLevel;
   enabled: boolean;
 }
 
 export interface VelocityComponent {
+  type: string;
   entityId: EntityId;
   vx: number;
   vy: number;
   vz?: number;
+  priority?: SystemPriority;
+  lodLevel?: LODLevel;
   enabled: boolean;
 }
 
 export interface RotationComponent {
+  type: string;
   entityId: EntityId;
   angle: number;
+  x?: number;
+  y?: number;
+  z?: number;
+  priority?: SystemPriority;
+  lodLevel?: LODLevel;
   enabled: boolean;
 }
 
@@ -97,3 +111,107 @@ export interface ShipComponent {
   lodLevel: 'high' | 'medium' | 'low';
   enabled: boolean;
 }
+
+// Additional component interfaces required by other files
+export interface ScaleComponent {
+  type: string;
+  entityId: EntityId;
+  x: number;
+  y: number;
+  z?: number;
+  priority?: SystemPriority;
+  lodLevel?: LODLevel;
+  enabled: boolean;
+}
+
+export interface RenderableComponent {
+  type: string;
+  entityId: EntityId;
+  mesh?: string;
+  texture?: string;
+  color?: string;
+  visible: boolean;
+  opacity: number;
+  zIndex: number;
+  renderLayer?: string;
+  customRenderData?: any;
+  priority?: SystemPriority;
+  lodLevel?: LODLevel;
+  enabled: boolean;
+}
+
+export interface ColliderComponent {
+  type: string;
+  entityId: EntityId;
+  shape: 'circle' | 'rectangle' | 'polygon';
+  radius?: number;
+  width?: number;
+  height?: number;
+  points?: Position[];
+  isTrigger: boolean;
+  collisionLayer: number;
+  collisionMask: number;
+  priority?: SystemPriority;
+  lodLevel?: LODLevel;
+  enabled: boolean;
+}
+
+export interface HealthComponent {
+  type: string;
+  entityId: EntityId;
+  current: number;
+  max: number;
+  regeneration: number;
+  invincible: boolean;
+  priority?: SystemPriority;
+  lodLevel?: LODLevel;
+  enabled: boolean;
+}
+
+// Base Component interface
+export interface Component {
+  type: string;
+  entityId: EntityId;
+  priority?: SystemPriority;
+  lodLevel?: LODLevel;
+  enabled: boolean;
+  [key: string]: any;
+}
+
+// Entity type
+export interface Entity {
+  id: EntityId;
+  components: Map<string, Component>;
+  active: boolean;
+  tags: Set<string>;
+}
+
+// Query for filtering entities
+export interface EntityQuery {
+  active?: boolean;
+  withComponents?: string[];
+  withoutComponents?: string[];
+  withTags?: string[];
+  withoutTags?: string[];
+}
+
+// System Performance Metrics
+export interface SystemPerformanceMetrics {
+  systemName: string;
+  executionTime: number;
+  entitiesProcessed: number;
+  lastExecutionTimestamp: number;
+  averageExecutionTime: number;
+}
+
+// EntityEventCallback type
+export type EntityEventCallback = (data: any) => void;
+
+// Type alias for component type strings
+export type ComponentType = string;
+
+// Priority levels for systems
+export type SystemPriority = 'high' | 'medium' | 'low';
+
+// Level of Detail levels
+export type LODLevel = 'high' | 'medium' | 'low';

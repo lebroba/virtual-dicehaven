@@ -1,12 +1,13 @@
 
-import { Entity, EntityId, Component, ComponentType, EntityQuery, EntityEvent, EntityEventCallback } from './types';
+import { EntityId, Component, ComponentType, EntityQuery, EntityEvent, EntityEventCallback } from './types';
+import { Entity } from './types';
 
 /**
  * Manages all entities in the ECS system
  */
 export class EntityManager {
   private entities: Map<EntityId, Entity> = new Map();
-  private nextEntityId: EntityId = 1;
+  private nextEntityId: number = 1;
   private eventListeners: Map<string, Map<EntityId, EntityEventCallback[]>> = new Map();
   
   /**
@@ -14,7 +15,9 @@ export class EntityManager {
    * @returns The created entity
    */
   createEntity(): Entity {
-    const id = this.nextEntityId++;
+    const id: number = this.nextEntityId;
+    this.nextEntityId += 1;
+    
     const entity: Entity = {
       id,
       components: new Map(),

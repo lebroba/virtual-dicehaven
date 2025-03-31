@@ -1,7 +1,5 @@
 
-import { System } from '../types';
-import { PositionComponent, VelocityComponent, RotationComponent } from '../types';
-import { ShipComponent } from '../types';
+import { System, Entity, PositionComponent, VelocityComponent, RotationComponent, ShipComponent } from '../types';
 
 /**
  * ShipMovementSystem handles ship specific movement mechanics
@@ -12,7 +10,7 @@ export function createShipMovementSystem(): System {
     priority: 'high',
     enabled: true,
     dependencies: ['movement'], // Run after the basic movement system
-    execute: (deltaTime, entities) => {
+    execute: (deltaTime: number, entities: Entity[]) => {
       // Find ship entities with position and velocity
       const shipEntities = entities.filter(entity => {
         return entity.active && 

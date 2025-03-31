@@ -1,6 +1,5 @@
 
-import { System } from '../types';
-import { PositionComponent, VelocityComponent } from '../types';
+import { System, Entity, PositionComponent, VelocityComponent } from '../types';
 
 /**
  * MovementSystem updates positions based on velocities
@@ -10,7 +9,7 @@ export function createMovementSystem(): System {
     name: 'movement',
     priority: 'high',
     enabled: true,
-    execute: (deltaTime, entities) => {
+    execute: (deltaTime: number, entities: Entity[]) => {
       // Find entities with both position and velocity components
       const movableEntities = entities.filter(entity => {
         return entity.active && 

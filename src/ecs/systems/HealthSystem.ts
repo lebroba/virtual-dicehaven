@@ -1,6 +1,5 @@
 
-import { System } from '../types';
-import { HealthComponent } from '../types';
+import { System, Entity, HealthComponent } from '../types';
 import { ecs } from '../ECS';
 
 /**
@@ -11,7 +10,7 @@ export function createHealthSystem(): System {
     name: 'health',
     priority: 'medium',
     enabled: true,
-    execute: (deltaTime, entities) => {
+    execute: (deltaTime: number, entities: Entity[]) => {
       // Find entities with health components
       const entitiesWithHealth = entities.filter(entity => {
         return entity.active && entity.components.has('health');
@@ -35,7 +34,7 @@ export function createHealthSystem(): System {
         // Check for death
         if (health.current <= 0) {
           // Trigger a death event
-          ecs.triggerEvent({
+          ecs.dispatchEvent({
             type: 'entity_died',
             sourceEntityId: entity.id,
             data: {
