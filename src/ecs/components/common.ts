@@ -1,5 +1,5 @@
 
-import { EntityId, PositionComponent, VelocityComponent, RotationComponent, ScaleComponent, RenderableComponent, ColliderComponent, HealthComponent } from '../types';
+import { EntityId, PositionComponent, VelocityComponent, RotationComponent, RenderableComponent, ColliderComponent, HealthComponent } from '../types';
 
 /**
  * Create a position component

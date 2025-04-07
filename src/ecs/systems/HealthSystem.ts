@@ -1,5 +1,5 @@
 
-import { System, Entity, HealthComponent } from '../types';
+import { System, Entity, HealthComponent, EntityId } from '../types';
 import { ecs } from '../ECS';
 
 /**
