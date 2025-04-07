@@ -3,145 +3,33 @@ import { EntityId, ShipComponent } from '../types';
 
 /**
  * Create a ship component
- * @param entityId Entity ID
- * @param shipClass Ship class
- * @param nationality Ship nationality
- * @returns Ship component
  */
 export function createShipComponent(
   entityId: EntityId,
-  shipClass: ShipComponent['shipClass'] = 'Sloop',
-  nationality: string = 'British',
-  options: {
-    priority?: 'high' | 'medium' | 'low',
-    lodLevel?: 'high' | 'medium' | 'low',
-    enabled?: boolean
-  } = {}
+  shipClass: 'FirstRate' | 'SecondRate' | 'ThirdRate' | 'FourthRate' | 'FifthRate' | 'SixthRate' | 'Sloop' | 'Cutter' | 'Fireship',
+  nationality: string
 ): ShipComponent {
-  // Set default values based on ship class
-  let hullMax = 100;
-  let crewMax = 100;
-  let suppliesMax = 100;
-  let cannonsPort = 8;
-  let cannonsStarboard = 8;
-  let cannonsBow = 0;
-  let cannonsStern = 2;
-  let speedMax = 10;
-  
-  switch (shipClass) {
-    case 'FirstRate':
-      hullMax = 1000;
-      crewMax = 850;
-      suppliesMax = 500;
-      cannonsPort = 50;
-      cannonsStarboard = 50;
-      cannonsBow = 4;
-      cannonsStern = 6;
-      speedMax = 6;
-      break;
-    case 'SecondRate':
-      hullMax = 900;
-      crewMax = 750;
-      suppliesMax = 450;
-      cannonsPort = 45;
-      cannonsStarboard = 45;
-      cannonsBow = 3;
-      cannonsStern = 6;
-      speedMax = 6.5;
-      break;
-    case 'ThirdRate':
-      hullMax = 800;
-      crewMax = 650;
-      suppliesMax = 400;
-      cannonsPort = 40;
-      cannonsStarboard = 40;
-      cannonsBow = 2;
-      cannonsStern = 4;
-      speedMax = 7;
-      break;
-    case 'FourthRate':
-      hullMax = 600;
-      crewMax = 420;
-      suppliesMax = 300;
-      cannonsPort = 30;
-      cannonsStarboard = 30;
-      cannonsBow = 2;
-      cannonsStern = 3;
-      speedMax = 8;
-      break;
-    case 'FifthRate':
-      hullMax = 450;
-      crewMax = 300;
-      suppliesMax = 250;
-      cannonsPort = 22;
-      cannonsStarboard = 22;
-      cannonsBow = 2;
-      cannonsStern = 2;
-      speedMax = 9;
-      break;
-    case 'SixthRate':
-      hullMax = 350;
-      crewMax = 240;
-      suppliesMax = 200;
-      cannonsPort = 14;
-      cannonsStarboard = 14;
-      cannonsBow = 1;
-      cannonsStern = 2;
-      speedMax = 10;
-      break;
-    case 'Sloop':
-      hullMax = 250;
-      crewMax = 120;
-      suppliesMax = 150;
-      cannonsPort = 8;
-      cannonsStarboard = 8;
-      cannonsBow = 1;
-      cannonsStern = 1;
-      speedMax = 12;
-      break;
-    case 'Cutter':
-      hullMax = 150;
-      crewMax = 60;
-      suppliesMax = 80;
-      cannonsPort = 5;
-      cannonsStarboard = 5;
-      cannonsBow = 1;
-      cannonsStern = 1;
-      speedMax = 14;
-      break;
-    case 'Fireship':
-      hullMax = 200;
-      crewMax = 40;
-      suppliesMax = 40;
-      cannonsPort = 0;
-      cannonsStarboard = 0;
-      cannonsBow = 0;
-      cannonsStern = 0;
-      speedMax = 8;
-      break;
-  }
-  
   return {
     type: 'ship',
     entityId,
     shipClass,
     hull: {
-      current: hullMax,
-      max: hullMax
+      current: 100,
+      max: 100
     },
     crew: {
-      current: crewMax,
-      max: crewMax
+      current: 100,
+      max: 100
     },
     supplies: {
-      current: suppliesMax,
-      max: suppliesMax
+      current: 100,
+      max: 100
     },
     cannons: {
-      port: cannonsPort,
-      starboard: cannonsStarboard,
-      bow: cannonsBow,
-      stern: cannonsStern
+      port: 20,
+      starboard: 20,
+      bow: 2,
+      stern: 2
     },
     sails: {
       mainSails: 100,
@@ -164,16 +52,13 @@ export function createShipComponent(
     },
     speed: {
       current: 0,
-      max: speedMax
+      max: 10
     },
     nationality,
-    experienceLevel: 3, // Default to average experience
+    experienceLevel: 1,
     isAI: false,
-    priority: options.priority || 'medium',
-    lodLevel: options.lodLevel || 'high',
-    enabled: options.enabled !== undefined ? options.enabled : true
+    priority: 'high',
+    lodLevel: 'high',
+    enabled: true
   };
 }
-
-// Export the component type for use in type checking
-export type { ShipComponent };
