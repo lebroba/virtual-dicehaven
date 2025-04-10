@@ -38,7 +38,7 @@ export const createShipEntity = () => {
   
   ecs.addComponent(
     entityId,
-    createShipComponent(entityId, 'Frigate', 'British')
+    createShipComponent(entityId, 'FifthRate', 'British')
   );
   
   return entity;

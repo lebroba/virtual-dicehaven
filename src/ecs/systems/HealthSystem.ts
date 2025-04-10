@@ -44,7 +44,7 @@ export function createHealthSystem(): System {
           
           // Make sure entity.id exists before calling setEntityActive
           if (entity.id !== undefined && entity.id !== null) {
-            // Mark entity as inactive
+            // Mark entity as inactive - handle EntityId type properly
             ecs.setEntityActive(entity.id, false);
           }
         }

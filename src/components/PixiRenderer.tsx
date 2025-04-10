@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useState } from 'react';
 import * as PIXI from 'pixi.js';
 
@@ -16,14 +17,14 @@ const PixiRenderer: React.FC<PixiRendererProps> = ({ width, height, className })
     if (!pixiContainer.current) return;
 
     // Create PIXI application with explicit transparency
-const pixiApp = new PIXI.Application({
-  width,
-  height,
-  backgroundAlpha: 0, // Make background transparent
-  antialias: true,
-  resolution: window.devicePixelRatio || 1,
-  autoDensity: true,
-});
+    const pixiApp = new PIXI.Application({
+      width,
+      height,
+      backgroundAlpha: 0, // Make background transparent
+      antialias: true,
+      resolution: window.devicePixelRatio || 1,
+      autoDensity: true,
+    });
 
     // Ensure the canvas itself has no background
     const canvas = pixiApp.view as HTMLCanvasElement;
@@ -46,7 +47,19 @@ const pixiApp = new PIXI.Application({
     // Cleanup
     return () => {
       window.removeEventListener('resize', onResize);
-      pixiApp.destroy(true, { children: true, texture: true, baseTexture: true });
+      
+      // Fix: Check for null reference before calling destroy
+      if (pixiApp) {
+        try {
+          // Fix: Handle case where canvas might already be removed
+          if (pixiContainer.current && canvas.parentNode === pixiContainer.current) {
+            pixiContainer.current.removeChild(canvas);
+          }
+          pixiApp.destroy(true, { children: true, texture: true, baseTexture: true });
+        } catch (err) {
+          console.error("Error cleaning up PIXI application:", err);
+        }
+      }
       setApp(null);
     };
   }, [width, height]);
@@ -107,8 +120,15 @@ const pixiApp = new PIXI.Application({
     drawMissilePath();
 
     return () => {
-      app.stage.removeChild(missilePathsContainer);
-      missilePathsContainer.destroy({ children: true });
+      // Fix: Check app before accessing stage
+      if (app && app.stage) {
+        try {
+          app.stage.removeChild(missilePathsContainer);
+          missilePathsContainer.destroy({ children: true });
+        } catch (err) {
+          console.error("Error cleaning up missile paths:", err);
+        }
+      }
     };
   }, [app, height, width]);
 

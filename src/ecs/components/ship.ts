@@ -1,12 +1,14 @@
 
 import { EntityId, ShipComponent } from '../types';
 
+type ShipClassType = 'FirstRate' | 'SecondRate' | 'ThirdRate' | 'FourthRate' | 'FifthRate' | 'SixthRate' | 'Sloop' | 'Cutter' | 'Fireship';
+
 /**
  * Create a ship component
  */
 export function createShipComponent(
   entityId: EntityId,
-  shipClass: 'FirstRate' | 'SecondRate' | 'ThirdRate' | 'FourthRate' | 'FifthRate' | 'SixthRate' | 'Sloop' | 'Cutter' | 'Fireship',
+  shipClass: ShipClassType,
   nationality: string
 ): ShipComponent {
   return {

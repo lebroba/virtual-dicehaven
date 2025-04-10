@@ -74,6 +74,7 @@ const Map: React.FC<MapProps> = ({
     if (!containerRef.current || !olMap) return;
 
     const view = olMap.getView();
+    if (!view) return; // Add null check for view
 
     // DragPan for panning
     const dragPan = new DragPan({
@@ -97,41 +98,66 @@ const Map: React.FC<MapProps> = ({
 
     // Function to update grid dimensions, position, and scale
     const updateGrid = () => {
-      if (!containerRef.current) return;
+      if (!containerRef.current || !olMap || !view) return;
 
-      // Get the map's visible extent in map coordinates
-      const extent = view.calculateExtent(olMap.getSize());
-      const [minX, minY, maxX, maxY] = extent;
+      try {
+        const mapSize = olMap.getSize();
+        // Add proper null checks
+        if (!mapSize) {
+          console.warn("Map size is not available yet");
+          return;
+        }
 
-      // Convert extent to pixel dimensions
-      const resolution = view.getResolution() || 1;
-      const widthInPixels = (maxX - minX) / resolution;
-      const heightInPixels = (maxY - minY) / resolution;
-      setGridDimensions({
-        width: widthInPixels,
-        height: heightInPixels
-      });
+        // Get the map's visible extent in map coordinates
+        const extent = view.calculateExtent(mapSize);
+        if (!extent || extent.length < 4) {
+          console.warn("Map extent is not valid");
+          return;
+        }
 
-      // Get the map's center in map coordinates
-      const center = view.getCenter() || [0, 0];
-      const centerPixel = olMap.getPixelFromCoordinate(center);
+        const [minX, minY, maxX, maxY] = extent;
 
-      // Calculate the offset to align the grid with the map's center
-      const containerWidth = containerRef.current.clientWidth;
-      const containerHeight = containerRef.current.clientHeight;
-      const offsetX = centerPixel[0] - containerWidth / 2;
-      const offsetY = centerPixel[1] - containerHeight / 2;
+        // Convert extent to pixel dimensions
+        const resolution = view.getResolution() || 1;
+        const widthInPixels = (maxX - minX) / resolution;
+        const heightInPixels = (maxY - minY) / resolution;
+        setGridDimensions({
+          width: widthInPixels,
+          height: heightInPixels
+        });
 
-      setPosition({
-        x: -offsetX,
-        y: -offsetY
-      });
+        // Get the map's center in map coordinates
+        const center = view.getCenter();
+        if (!center) {
+          console.warn("Map center is not available");
+          return;
+        }
 
-      // Calculate the scale based on the zoom level
-      const zoom = view.getZoom() || 3;
-      const baseZoom = 3; // The zoom level where scale = 1
-      const scaleFactor = Math.pow(2, zoom - baseZoom);
-      setScale(scaleFactor);
+        const centerPixel = olMap.getPixelFromCoordinate(center);
+        if (!centerPixel || centerPixel.length < 2) {
+          console.warn("Could not convert center to pixel coordinates");
+          return;
+        }
+
+        // Calculate the offset to align the grid with the map's center
+        const containerWidth = containerRef.current.clientWidth;
+        const containerHeight = containerRef.current.clientHeight;
+        const offsetX = centerPixel[0] - containerWidth / 2;
+        const offsetY = centerPixel[1] - containerHeight / 2;
+
+        setPosition({
+          x: -offsetX,
+          y: -offsetY
+        });
+
+        // Calculate the scale based on the zoom level
+        const zoom = view.getZoom() || 3;
+        const baseZoom = 3; // The zoom level where scale = 1
+        const scaleFactor = Math.pow(2, zoom - baseZoom);
+        setScale(scaleFactor);
+      } catch (error) {
+        console.error("Error updating grid:", error);
+      }
     };
 
     // Initial update
@@ -152,13 +178,24 @@ const Map: React.FC<MapProps> = ({
     }
 
     return () => {
-      olMap.removeInteraction(dragPan);
-      olMap.removeInteraction(mouseWheelZoom);
-      dragPanRef.current = null;
-      view.un('change:resolution', updateGrid);
-      view.un('change:center', updateGrid);
-      if (onZoomChange) {
-        view.un('change:resolution', () => {});
+      // Clean up listeners and interactions
+      try {
+        if (olMap && !olMap.disposed) {
+          olMap.removeInteraction(dragPan);
+          olMap.removeInteraction(mouseWheelZoom);
+        }
+        
+        if (view) {
+          view.un('change:resolution', updateGrid);
+          view.un('change:center', updateGrid);
+          if (onZoomChange) {
+            view.un('change:resolution', () => {});
+          }
+        }
+        
+        dragPanRef.current = null;
+      } catch (error) {
+        console.error("Error cleaning up map interactions:", error);
       }
     };
   }, [olMap, disableMapZoom, onZoomChange, selectedTool]);
@@ -175,7 +212,7 @@ const Map: React.FC<MapProps> = ({
 
   // Handle zoom in control
   const handleZoomIn = () => {
-    if (olMap && onZoomChange) {
+    if (olMap && olMap.getView()) {
       const currentZoom = olMap.getView().getZoom() || 3;
       const newZoom = Math.min(currentZoom + 1, 19);
       
@@ -186,13 +223,13 @@ const Map: React.FC<MapProps> = ({
         easing: (t) => t
       });
       
-      onZoomChange(newZoom);
+      if (onZoomChange) onZoomChange(newZoom);
     }
   };
 
   // Handle zoom out control
   const handleZoomOut = () => {
-    if (olMap && onZoomChange) {
+    if (olMap && olMap.getView()) {
       const currentZoom = olMap.getView().getZoom() || 3;
       const newZoom = Math.max(currentZoom - 1, 0);
       
@@ -203,7 +240,7 @@ const Map: React.FC<MapProps> = ({
         easing: (t) => t
       });
       
-      onZoomChange(newZoom);
+      if (onZoomChange) onZoomChange(newZoom);
     }
   };
 
@@ -447,7 +484,7 @@ const Map: React.FC<MapProps> = ({
   ];
 
   // Get the current zoom level to display
-  const currentMapZoom = olMap ? Math.round((olMap.getView().getZoom() || 3) * 10) / 10 : 3;
+  const currentMapZoom = olMap && olMap.getView() ? Math.round((olMap.getView().getZoom() || 3) * 10) / 10 : 3;
 
   return (
     <div
@@ -546,6 +583,61 @@ const Map: React.FC<MapProps> = ({
           
           {/* Pan Directional Controls */}
           <div className="grid grid-cols-3 w-full">
+            <button
+              onClick={() => handlePanDirection('left')}
+              className="w-10 h-10 flex items-center justify-center hover:bg-primary/20 transition-colors"
+              aria-label="Pan left"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 12h18" />
+                <path d="M3 12l6 6" />
+                <path d="M3 12l6-6" />
+              </svg>
+            </button>
+            <button
+              onClick={handleCenterView}
+              className="w-10 h-10 flex items-center justify-center hover:bg-primary/20 transition-colors"
+              aria-label="Center view"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+              </svg>
+            </button>
+            <button
+              onClick={() => handlePanDirection('right')}
+              className="w-10 h-10 flex items-center justify-center hover:bg-primary/20 transition-colors"
+              aria-label="Pan right"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 12h18" />
+                <path d="M15 6l6 6" />
+                <path d="M15 18l6-6" />
+              </svg>
+            </button>
+            <button
+              onClick={() => handlePanDirection('up')}
+              className="w-10 h-10 flex items-center justify-center hover:bg-primary/20 transition-colors"
+              aria-label="Pan up"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 3v18" />
+                <path d="M6 3l6 6" />
+                <path d="M18 3l-6 6" />
+              </svg>
+            </button>
+            <div></div>
+            <button
+              onClick={() => handlePanDirection('down')}
+              className="w-10 h-10 flex items-center justify-center hover:bg-primary/20 transition-colors"
+              aria-label="Pan down"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 3v18" />
+                <path d="M18 21l-6-6" />
+                <path d="M6 21l6-6" />
+              </svg>
+            </button>
           </div>
           
           {/* Divider */}

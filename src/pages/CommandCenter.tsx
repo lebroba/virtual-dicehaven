@@ -17,10 +17,12 @@ const CommandCenter: React.FC = () => {
   const [mapCenter, setMapCenter] = useState<[number, number]>([30.5, 45.8]);
   const [mapZoom, setMapZoom] = useState<number>(3);
   const [wsConnected, setWsConnected] = useState<boolean>(false);
+  const [mapReady, setMapReady] = useState<boolean>(false);
 
   const handleMapReady = useCallback((map: OLMap) => {
     console.log("Map is ready");
     setOLMap(map);
+    setMapReady(true);
   }, []);
 
   useEffect(() => {
@@ -75,58 +77,86 @@ const CommandCenter: React.FC = () => {
     setMapCenter(newCenter);
   };
 
-  // Handlers for map controls with null checking
+  // Handlers for map controls with better null checking
   const handleLeftClick = () => {
     if (olMap) {
-      const view = olMap.getView();
-      if (view) {
-        const center = view.getCenter() || [0, 0];
-        const resolution = view.getResolution() || 1;
-        view.setCenter([center[0] - resolution * 100, center[1]]); // Pan left
+      try {
+        const view = olMap.getView();
+        if (view) {
+          const center = view.getCenter();
+          if (!center) return;
+          
+          const resolution = view.getResolution() || 1;
+          view.setCenter([center[0] - resolution * 100, center[1]]); // Pan left
+        }
+      } catch (error) {
+        console.error("Error handling left click:", error);
       }
     }
   };
 
   const handleRightClick = () => {
     if (olMap) {
-      const view = olMap.getView();
-      if (view) {
-        const center = view.getCenter() || [0, 0];
-        const resolution = view.getResolution() || 1;
-        view.setCenter([center[0] + resolution * 100, center[1]]); // Pan right
+      try {
+        const view = olMap.getView();
+        if (view) {
+          const center = view.getCenter();
+          if (!center) return;
+          
+          const resolution = view.getResolution() || 1;
+          view.setCenter([center[0] + resolution * 100, center[1]]); // Pan right
+        }
+      } catch (error) {
+        console.error("Error handling right click:", error);
       }
     }
   };
 
   const handleUpClick = () => {
     if (olMap) {
-      const view = olMap.getView();
-      if (view) {
-        const center = view.getCenter() || [0, 0];
-        const resolution = view.getResolution() || 1;
-        view.setCenter([center[0], center[1] + resolution * 100]); // Pan up
+      try {
+        const view = olMap.getView();
+        if (view) {
+          const center = view.getCenter();
+          if (!center) return;
+          
+          const resolution = view.getResolution() || 1;
+          view.setCenter([center[0], center[1] + resolution * 100]); // Pan up
+        }
+      } catch (error) {
+        console.error("Error handling up click:", error);
       }
     }
   };
 
   const handleDownClick = () => {
     if (olMap) {
-      const view = olMap.getView();
-      if (view) {
-        const center = view.getCenter() || [0, 0];
-        const resolution = view.getResolution() || 1;
-        view.setCenter([center[0], center[1] - resolution * 100]); // Pan down
+      try {
+        const view = olMap.getView();
+        if (view) {
+          const center = view.getCenter();
+          if (!center) return;
+          
+          const resolution = view.getResolution() || 1;
+          view.setCenter([center[0], center[1] - resolution * 100]); // Pan down
+        }
+      } catch (error) {
+        console.error("Error handling down click:", error);
       }
     }
   };
 
   const handleCenterClick = () => {
     if (olMap) {
-      const view = olMap.getView();
-      if (view) {
-        view.setCenter(fromLonLat([30.5, 45.8])); // Reset to default center
-        view.setZoom(3); // Reset to default zoom
-        handleZoomChange(3);
+      try {
+        const view = olMap.getView();
+        if (view) {
+          view.setCenter(fromLonLat([30.5, 45.8])); // Reset to default center
+          view.setZoom(3); // Reset to default zoom
+          handleZoomChange(3);
+        }
+      } catch (error) {
+        console.error("Error handling center click:", error);
       }
     }
   };
@@ -162,26 +192,30 @@ const CommandCenter: React.FC = () => {
                 onMapReady={handleMapReady}
               />
             </div>
-            <div className="absolute inset-0 z-20 pointer-events-auto">
-              <Map
-                disableMapZoom={true}
-                olMap={olMap}
-                onZoomChange={handleZoomChange}
-              />
-            </div>
-            <div className="absolute inset-0 z-30 pointer-events-none">
-              <PixiRenderer width={1000} height={800} className="w-full h-full" />
-            </div>
-            {/* MapControls in the bottom-right corner */}
-            <div className="absolute bottom-4 right-4 z-40 pointer-events-auto">
-              <MapControls
-                onLeftClick={handleLeftClick}
-                onRightClick={handleRightClick}
-                onUpClick={handleUpClick}
-                onDownClick={handleDownClick}
-                onCenterClick={handleCenterClick}
-              />
-            </div>
+            {mapReady && (
+              <>
+                <div className="absolute inset-0 z-20 pointer-events-auto">
+                  <Map
+                    disableMapZoom={true}
+                    olMap={olMap}
+                    onZoomChange={handleZoomChange}
+                  />
+                </div>
+                <div className="absolute inset-0 z-30 pointer-events-none">
+                  <PixiRenderer width={1000} height={800} className="w-full h-full" />
+                </div>
+                {/* MapControls in the bottom-right corner */}
+                <div className="absolute bottom-4 right-4 z-40 pointer-events-auto">
+                  <MapControls
+                    onLeftClick={handleLeftClick}
+                    onRightClick={handleRightClick}
+                    onUpClick={handleUpClick}
+                    onDownClick={handleDownClick}
+                    onCenterClick={handleCenterClick}
+                  />
+                </div>
+              </>
+            )}
           </div>
           <div className="w-80 flex-shrink-0 h-[calc(100vh-8rem)] animate-slide-in">
             <Sidebar />
