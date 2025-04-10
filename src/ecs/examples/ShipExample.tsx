@@ -15,29 +15,32 @@ export const createShipEntity = () => {
   const entity = ecs.createEntity();
   const entityId = entity.id;
   
+  // Convert EntityId to number for components that require it
+  const numericId = typeof entityId === 'string' ? parseInt(entityId, 10) : entityId;
+  
   // Add components with proper typing for entityId
   ecs.addComponent(
-    entityId,
+    numericId,
     createPositionComponent(entityId, 100, 100)
   );
   
   ecs.addComponent(
-    entityId,
+    numericId,
     createVelocityComponent(entityId, 0, 0)
   );
   
   ecs.addComponent(
-    entityId,
+    numericId,
     createRotationComponent(entityId, 0)
   );
   
   ecs.addComponent(
-    entityId,
+    numericId,
     createHealthComponent(entityId, 100, 100, 0.1)
   );
   
   ecs.addComponent(
-    entityId,
+    numericId,
     createShipComponent(entityId, 'FifthRate', 'British')
   );
   
