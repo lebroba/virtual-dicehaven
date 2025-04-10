@@ -11,8 +11,8 @@ import { createShipComponent } from '../components/ship';
 import { EntityId } from '../types';
 
 export const createShipEntity = () => {
-  // Create a new entity
-  const entity = ecs.createEntity(['ship', 'controllable']);
+  // Create a new entity without passing any arguments
+  const entity = ecs.createEntity();
   const entityId = entity.id;
   
   // Add components with proper typing for entityId
@@ -52,7 +52,9 @@ const ShipExample: React.FC = () => {
     return () => {
       // Clean up the entity when the component unmounts
       if (ship && ship.id) {
-        ecs.removeEntity(ship.id);
+        // Convert EntityId to number if needed
+        const numericId = typeof ship.id === 'string' ? parseInt(ship.id, 10) : ship.id;
+        ecs.removeEntity(numericId);
       }
     };
   }, []);

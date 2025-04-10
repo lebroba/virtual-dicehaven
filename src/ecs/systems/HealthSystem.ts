@@ -44,8 +44,9 @@ export function createHealthSystem(): System {
           
           // Make sure entity.id exists before calling setEntityActive
           if (entity.id !== undefined && entity.id !== null) {
-            // Mark entity as inactive - handle EntityId type properly
-            ecs.setEntityActive(entity.id, false);
+            // Convert EntityId to number if needed when calling API that expects number
+            const numericId = typeof entity.id === 'string' ? parseInt(entity.id, 10) : entity.id;
+            ecs.setEntityActive(numericId, false);
           }
         }
       });

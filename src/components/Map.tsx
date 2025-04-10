@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useState } from "react";
 import { useGame } from "@/context/GameContext";
 import GridOverlay from "./GridOverlay";
@@ -180,9 +181,13 @@ const Map: React.FC<MapProps> = ({
     return () => {
       // Clean up listeners and interactions
       try {
-        if (olMap && !olMap.disposed) {
-          olMap.removeInteraction(dragPan);
-          olMap.removeInteraction(mouseWheelZoom);
+        if (olMap) {
+          try {
+            olMap.removeInteraction(dragPan);
+            olMap.removeInteraction(mouseWheelZoom);
+          } catch (err) {
+            console.error("Error removing map interactions:", err);
+          }
         }
         
         if (view) {
