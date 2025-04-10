@@ -1,58 +1,68 @@
 
 import React, { useEffect } from 'react';
-import { useECS } from '../hooks/useECS';
+import { ecs } from '../ECS';
+import { 
+  createPositionComponent, 
+  createVelocityComponent, 
+  createRotationComponent, 
+  createHealthComponent 
+} from '../components/common';
 import { createShipComponent } from '../components/ship';
-import { createPositionComponent, createVelocityComponent, createRotationComponent, createRenderableComponent } from '../components/common';
-import { createMovementSystem } from '../systems/MovementSystem';
-import { createShipMovementSystem } from '../systems/ShipMovementSystem';
+import { EntityId } from '../types';
 
-/**
- * Example component showing how to set up a ship with the ECS
- */
-export const ShipExample: React.FC = () => {
-  const { ecs, createEntity, addComponent, startECS, stopECS } = useECS();
+export const createShipEntity = () => {
+  // Create a new entity
+  const entity = ecs.createEntity(['ship', 'controllable']);
+  const entityId = entity.id;
   
+  // Add components with proper typing for entityId
+  ecs.addComponent(
+    entityId,
+    createPositionComponent(entityId, 100, 100)
+  );
+  
+  ecs.addComponent(
+    entityId,
+    createVelocityComponent(entityId, 0, 0)
+  );
+  
+  ecs.addComponent(
+    entityId,
+    createRotationComponent(entityId, 0)
+  );
+  
+  ecs.addComponent(
+    entityId,
+    createHealthComponent(entityId, 100, 100, 0.1)
+  );
+  
+  ecs.addComponent(
+    entityId,
+    createShipComponent(entityId, 'Frigate', 'British')
+  );
+  
+  return entity;
+};
+
+const ShipExample: React.FC = () => {
   useEffect(() => {
-    // Set up systems
-    const movementSystem = createMovementSystem();
-    const shipMovementSystem = createShipMovementSystem();
+    // Create a ship entity when the component mounts
+    const ship = createShipEntity();
     
-    ecs.addSystem(movementSystem);
-    ecs.addSystem(shipMovementSystem);
-    
-    // Create a ship entity
-    const shipEntity = createEntity();
-    
-    // Add components to the ship
-    addComponent(shipEntity.id, createPositionComponent(shipEntity.id, 0, 0));
-    addComponent(shipEntity.id, createVelocityComponent(shipEntity.id, 0, 0));
-    addComponent(shipEntity.id, createRotationComponent(shipEntity.id, 0));
-    // Changed from "Frigate" to "FifthRate" which is a valid ship class
-    addComponent(shipEntity.id, createShipComponent(shipEntity.id, 'FifthRate', 'British'));
-    
-    // Add a renderable component for visualization
-    addComponent(shipEntity.id, createRenderableComponent(shipEntity.id, {
-      texture: 'ship',
-      visible: true,
-      opacity: 1,
-      zIndex: 1
-    }));
-    
-    // Start the ECS
-    startECS();
-    
-    // Cleanup on unmount
     return () => {
-      stopECS();
+      // Clean up the entity when the component unmounts
+      if (ship && ship.id) {
+        ecs.removeEntity(ship.id);
+      }
     };
   }, []);
   
   return (
-    <div className="p-4 border rounded bg-slate-800">
-      <h3 className="text-lg font-semibold mb-2">Ship Example</h3>
-      <p className="text-sm text-slate-300">
-        A ship entity has been created and added to the ECS. Systems are running in the background.
-      </p>
+    <div>
+      <h2>Ship Example</h2>
+      <p>A ship entity has been created in the ECS system.</p>
     </div>
   );
 };
+
+export default ShipExample;

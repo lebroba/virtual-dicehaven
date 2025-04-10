@@ -42,8 +42,11 @@ export function createHealthSystem(): System {
             }
           });
           
-          // Mark entity as inactive
-          ecs.setEntityActive(entity.id, false);
+          // Make sure entity.id exists before calling setEntityActive
+          if (entity.id !== undefined && entity.id !== null) {
+            // Mark entity as inactive
+            ecs.setEntityActive(entity.id, false);
+          }
         }
       });
     }

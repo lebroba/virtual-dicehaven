@@ -75,48 +75,59 @@ const CommandCenter: React.FC = () => {
     setMapCenter(newCenter);
   };
 
-  // Handlers for map controls
+  // Handlers for map controls with null checking
   const handleLeftClick = () => {
     if (olMap) {
       const view = olMap.getView();
-      const center = view.getCenter() || [0, 0];
-      const resolution = view.getResolution() || 1;
-      view.setCenter([center[0] - resolution * 100, center[1]]); // Pan left
+      if (view) {
+        const center = view.getCenter() || [0, 0];
+        const resolution = view.getResolution() || 1;
+        view.setCenter([center[0] - resolution * 100, center[1]]); // Pan left
+      }
     }
   };
 
   const handleRightClick = () => {
     if (olMap) {
       const view = olMap.getView();
-      const center = view.getCenter() || [0, 0];
-      const resolution = view.getResolution() || 1;
-      view.setCenter([center[0] + resolution * 100, center[1]]); // Pan right
+      if (view) {
+        const center = view.getCenter() || [0, 0];
+        const resolution = view.getResolution() || 1;
+        view.setCenter([center[0] + resolution * 100, center[1]]); // Pan right
+      }
     }
   };
 
   const handleUpClick = () => {
     if (olMap) {
       const view = olMap.getView();
-      const center = view.getCenter() || [0, 0];
-      const resolution = view.getResolution() || 1;
-      view.setCenter([center[0], center[1] + resolution * 100]); // Pan up
+      if (view) {
+        const center = view.getCenter() || [0, 0];
+        const resolution = view.getResolution() || 1;
+        view.setCenter([center[0], center[1] + resolution * 100]); // Pan up
+      }
     }
   };
 
   const handleDownClick = () => {
     if (olMap) {
       const view = olMap.getView();
-      const center = view.getCenter() || [0, 0];
-      const resolution = view.getResolution() || 1;
-      view.setCenter([center[0], center[1] - resolution * 100]); // Pan down
+      if (view) {
+        const center = view.getCenter() || [0, 0];
+        const resolution = view.getResolution() || 1;
+        view.setCenter([center[0], center[1] - resolution * 100]); // Pan down
+      }
     }
   };
 
   const handleCenterClick = () => {
     if (olMap) {
-      olMap.getView().setCenter(fromLonLat([30.5, 45.8])); // Reset to default center
-      olMap.getView().setZoom(3); // Reset to default zoom
-      handleZoomChange(3);
+      const view = olMap.getView();
+      if (view) {
+        view.setCenter(fromLonLat([30.5, 45.8])); // Reset to default center
+        view.setZoom(3); // Reset to default zoom
+        handleZoomChange(3);
+      }
     }
   };
 

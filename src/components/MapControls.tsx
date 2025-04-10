@@ -1,5 +1,7 @@
-// src/components/MapControls.tsx
-import React, { useEffect } from 'react';
+
+import React from 'react';
+import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Target } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface MapControlsProps {
   onLeftClick?: () => void;
@@ -14,66 +16,48 @@ const MapControls: React.FC<MapControlsProps> = ({
   onRightClick,
   onUpClick,
   onDownClick,
-  onCenterClick,
+  onCenterClick
 }) => {
-  // Handle keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // Prevent default behavior for arrow keys to avoid scrolling the page
-      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) {
-        event.preventDefault();
-      }
-      
-      // Map key presses to the appropriate handlers
-      switch (event.key) {
-        case 'ArrowLeft':
-          onLeftClick?.();
-          break;
-        case 'ArrowRight':
-          onRightClick?.();
-          break;
-        case 'ArrowUp':
-          onUpClick?.();
-          break;
-        case 'ArrowDown':
-          onDownClick?.();
-          break;
-        case 'c':
-        case 'C':
-          // Check if Shift key is pressed for Shift+C combination
-          if (event.shiftKey) {
-            onCenterClick?.();
-          }
-          break;
-      }
-    };
+  // Safely handle button clicks with null checks
+  const handleLeftClick = () => {
+    if (onLeftClick) onLeftClick();
+  };
 
-    // Add event listener
-    window.addEventListener('keydown', handleKeyDown);
+  const handleRightClick = () => {
+    if (onRightClick) onRightClick();
+  };
 
-    // Clean up event listener on component unmount
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [onLeftClick, onRightClick, onUpClick, onDownClick, onCenterClick]);
+  const handleUpClick = () => {
+    if (onUpClick) onUpClick();
+  };
+
+  const handleDownClick = () => {
+    if (onDownClick) onDownClick();
+  };
+
+  const handleCenterClick = () => {
+    if (onCenterClick) onCenterClick();
+  };
 
   return (
-    <div className="moveUI">
-      <button className="leftarrow" onClick={onLeftClick} aria-label="Pan Left">
-        ←
-      </button>
-      <button className="center" onClick={onCenterClick} aria-label="Reset View">
-      ⦿
-      </button>
-      <button className="rightarrow" onClick={onRightClick} aria-label="Pan Right">
-        →
-      </button>
-      <button className="uparrow" onClick={onUpClick} aria-label="Pan Up">
-        ↑
-      </button>
-      <button className="downarrow" onClick={onDownClick} aria-label="Pan Down">
-        ↓
-      </button>
+    <div className="flex flex-col items-center gap-1 bg-background/80 backdrop-blur-sm p-2 rounded-lg shadow-md">
+      <Button variant="ghost" size="icon" onClick={handleUpClick} className="h-8 w-8">
+        <ArrowUp size={16} />
+      </Button>
+      <div className="flex gap-1">
+        <Button variant="ghost" size="icon" onClick={handleLeftClick} className="h-8 w-8">
+          <ArrowLeft size={16} />
+        </Button>
+        <Button variant="ghost" size="icon" onClick={handleCenterClick} className="h-8 w-8">
+          <Target size={16} />
+        </Button>
+        <Button variant="ghost" size="icon" onClick={handleRightClick} className="h-8 w-8">
+          <ArrowRight size={16} />
+        </Button>
+      </div>
+      <Button variant="ghost" size="icon" onClick={handleDownClick} className="h-8 w-8">
+        <ArrowDown size={16} />
+      </Button>
     </div>
   );
 };
